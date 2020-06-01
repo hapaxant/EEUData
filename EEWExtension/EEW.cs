@@ -9,37 +9,61 @@ using EEUData;
 using System.IO;
 using System.Net;
 using System.Diagnostics;
+using System.Threading;
 
 namespace EEWData
 {
     public class EEWClient : Client, IClient
     {
-        private void SetHost() => this.MultiplayerHost = "wss://everybodyedits-universe.com/api/ws";
+        private void SetHost() => base.MultiplayerHost = "wss://everybodyedits-universe.com/api/ws";
         public EEWClient(string token) : base(token) { SetHost(); /*_connectUrl = "/?access_token=";*/ }
 
         /// <summary>
         /// set to false when building headless apps
         /// </summary>
         public static bool StartEditor { get; set; } = Environment.OSVersion.Platform == PlatformID.Win32NT;
-        public static string TokenPath { get; set; } = "token.txt";
-        public static void StoreToken(string token) => File.WriteAllText(TokenPath, token);
+        private static readonly object _tokenLock = new object();
+        //public static string TokenPath { get; set; } = "token.txt";
+        public static string _tokenPath = "token.txt";
+        public static string _cachedToken = null;
+        public static string TokenPath
+        {
+            get { lock (_tokenLock) return _tokenPath; }
+            set
+            {
+                lock (_tokenLock)
+                {
+                    if (_tokenPath != value) _cachedToken = null;
+                    _tokenPath = value;
+                }
+            }
+        }
+        //public static void StoreToken(string token) => File.WriteAllText(TokenPath, token);
+        public static void StoreToken(string token) { lock (_tokenLock) { _cachedToken = token; File.WriteAllText(_tokenPath, token); } }
         public static string GetToken(bool forcenew = false) => GetToken(forcenew, StartEditor);
         public static string GetToken(bool forcenew = false, bool startEditor = true)
         {
-            var exists = File.Exists(TokenPath);
-            if (forcenew || !exists)
+            if (_cachedToken != null) return _cachedToken;
+            lock (_tokenLock)
             {
-                if (!exists) File.WriteAllText(TokenPath, "");
-                if (startEditor) Process.Start(Environment.OSVersion.Platform == PlatformID.Win32NT ? "notepad.exe" : "nano", TokenPath).WaitForExit();
-                else throw new ArgumentException($"Please update {TokenPath} file.");
+                var exists = File.Exists(TokenPath);
+                if (forcenew || !exists)
+                {
+                    if (!exists) File.WriteAllText(TokenPath, "");
+                    if (startEditor) Process.Start(Environment.OSVersion.Platform == PlatformID.Win32NT ? "notepad.exe" : "nano", TokenPath).WaitForExit();
+                    else throw new ArgumentException($"Please update {TokenPath} file.");
+                }
+                var token = File.ReadAllText(TokenPath);
+                _cachedToken = token;
+                return token;
             }
-            return File.ReadAllText(TokenPath);
         }
 
         public EEWClient() : base(null) { SetHost(); }
         public EEWClient(string username, string password) : this(username, password, out _) { }
-        public EEWClient(string username, string password, out string token) //: base(null)
+        public EEWClient(string username, string password, out string token)
         {//who needs flurl and json anyway?
+            SetHost();
             using (WebClient client = new WebClient() { Proxy = null })
             {
                 client.Headers[HttpRequestHeader.ContentType] = "application/json";
@@ -47,152 +71,142 @@ namespace EEWData
                 result = result.Remove(result.Length - 2, 2);
                 token = _token = result.Substring(result.LastIndexOf('"') + 1);
             }
-            SetHost();
         }
-        new public void Connect()
+        //public bool Connect(int timeout = 4269)
+        //{
+        //    //using (var mre = new ManualResetEventSlim())
+        //    //{
+        //    //ConnectAsync().ContinueWith((_) => mre.Set());
+        //    var task = ConnectAsync();
+        //    task.Wait(timeout);
+        //    //var result = mre.Wait(timeout);
+        //    if (!task.IsCompleted)
+        //    {
+        //        base.Dispose();
+        //        return false;
+        //    }
+        //    if (task.IsFaulted)
+        //    {
+        //        base.Dispose();
+        //        throw task.Exception;
+        //    }
+        //    //if (!result) base.Dispose();//clean up socket
+        //    //return result;
+        //    return true;
+        //    //}
+        //}
+        public new void Connect() => ConnectAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+        public new Task ConnectAsync()
         {
-            //SetHost();
             if (_token == null)
                 _token = GetToken(false, StartEditor);
             try
             {
-                base.Dispose();
-                base.Connect();//ConnectAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+                base.Dispose(false);
+                return base.ConnectAsync();
             }
             catch//todo: add suitable exceptions
             {
                 _token = GetToken(true, StartEditor);
-                base.Dispose();
-                base.Connect();
+                base.Dispose(false);
+                return base.ConnectAsync();
+            }
+        }
+        public new EEWConnection CreateWorldConnection(string worldId)
+        {
+            if (!this.Connected) this.Connect();
+            return new EEWConnection(this, ConnectionScope.World, worldId);
+        }
+    }
+    public class EEWConnection : Connection, IConnection
+    {
+        public EEWConnection(IClient client, ConnectionScope scope, string worldId) : base(client, scope, worldId) { }
+        public bool Connected { get => _client.Connected; }
+
+        public string ChatPrefixText { get; set; } = "[Bot] ";
+        public void PlaceBlock(int layer, int x, int y, CustomBlockId id, params object[] args) => SendL(MessageType.PlaceBlock, new object[] { layer, x, y, (int)id }.Concat(args).ToArray());
+        public void PlaceBlock(int layer, int x, int y, BlockId id, params object[] args) => SendL(MessageType.PlaceBlock, new object[] { layer, x, y, (int)id }.Concat(args).ToArray());
+        public void PlaceBlock(int layer, int x, int y, int id, params object[] args) => SendL(MessageType.PlaceBlock, new object[] { layer, x, y, id }.Concat(args).ToArray());
+        public void PlaceBlock(int l, int x, int y, Block block)
+        {
+            object[] args;
+            switch (block)
+            {
+                case Effect b:
+                    args = new object[] { b.Amount };
+                    break;
+                case Sign b:
+                    args = new object[] { b.Text, b.Morph };
+                    break;
+                case Portal b:
+                    args = new object[] { b.Rotation, b.ThisId, b.TargetId, b.Flipped };
+                    break;
+                case Block b:
+                    args = new object[0];
+                    break;
+                default:
+                    throw new InvalidOperationException();
+            }
+            PlaceBlock(l, x, y, (BlockId)block.Id, args);
+        }
+        public void ChatRespond(string username, string message, string prefix = null) => ChatPrefix($"@{username}: {message}", prefix);
+        public void ChatPrefix(string message, string prefix = null) => Chat((prefix ?? ChatPrefixText) + message);
+        public void Chat(string message) => SendL(MessageType.Chat, message);
+        public void ChatDMPrefix(string username, string message, string prefix = null) => ChatDM(username, (prefix ?? ChatPrefixText) + message);
+        public void ChatDM(string username, string message) => Chat($"/pm {username} {message}");
+        public void SetGod(string username, bool hasgod) => SendL(MessageType.Chat, $"/god {username} {hasgod}");
+        public void SetEdit(string username, bool hasedit) => SendL(MessageType.Chat, $"/edit {username} {hasedit}");
+        public void Save() => SendL(MessageType.Chat, "/save");
+        public void Load() => SendL(MessageType.Chat, "/load");
+        public bool Init(int timeout = 5000, int resendDelay = 100) => Init(timeout, resendDelay, CancellationToken.None);
+        public bool Init(int timeout = 5000, int resendDelay = 100, CancellationToken cancellationToken = default(CancellationToken))
+        {//when sending init normally it sometimes drops it for some reason, so we resend it continiously until we get confirmation from server here
+            if (timeout < -1) throw new ArgumentOutOfRangeException(nameof(timeout));
+            if (resendDelay < -1) throw new ArgumentOutOfRangeException(nameof(resendDelay));
+            if (cancellationToken.IsCancellationRequested) throw new OperationCanceledException(cancellationToken);
+            using (var mre = new ManualResetEventSlim(false, 0))
+            {
+                void onmsg(object o, Message e) { if (e.Type == MessageType.Init) { this.OnMessage -= onmsg; mre?.Set(); } }
+                this.OnMessage += onmsg;
+                var stopwatch = Stopwatch.StartNew();
+                while (Connected && !mre.IsSet)
+                {
+                    SendL(MessageType.Init, 0);
+                    if (resendDelay < 0) return mre.Wait(timeout, cancellationToken);
+                    if (timeout < 0)
+                    {
+                        if (mre.Wait(resendDelay, cancellationToken)) return true;
+                        else continue;
+                    }
+
+                    int time = Math.Min(resendDelay, timeout - (int)stopwatch.ElapsedMilliseconds);
+                    if (time < 0) return mre.IsSet;
+                    else if (mre.Wait(time, cancellationToken)) return true;
+                }
+                return mre.IsSet;
+            }
+        }
+
+        private readonly object _sendLock = new object();
+        public bool UseLocking { get; set; } = false;
+        public bool UseAsync { get; set; } = true;
+        public void SendL(MessageType type, params object[] args)
+        {
+            if (UseAsync)
+            {
+                if (UseLocking) lock (_sendLock) SendAsync(type, args);
+                else SendAsync(type, args);
+            }
+            else
+            {
+                if (UseLocking) lock (_sendLock) Send(type, args);
+                else Send(type, args);
             }
         }
     }
 
-    //*/*//*////////can't inherit from other enum sooo*//*/*//*/*/
     public enum CustomBlockId : ushort
     {
-        #region old
-        /*
-        #region fg
-        //gravity
-        Empty = 0,
-        GravityLeft = 13,
-        GravityUp = 14,
-        GravityRight = 15,
-        GravityNone = 16,
-        GravitySlow = 71,
-        //basic
-        BasicWhite = 1,
-        BasicGrey = 2,
-        BasicBlack = 3,
-        BasicRed = 4,
-        BasicOrange = 5,
-        BasicYellow = 6,
-        BasicGreen = 7,
-        BasicCyan = 8,
-        BasicBlue = 9,
-        BasicPurple = 10,
-        //stone
-        StoneWhite = 18,
-        StoneGrey = 19,
-        StoneBlack = 20,
-        StoneRed = 21,
-        StoneOrange = 22,
-        StoneYellow = 23,
-        StoneGreen = 24,
-        StoneCyan = 25,
-        StoneBlue = 26,
-        StonePurple = 27,
-        //beveled
-        BeveledWhite = 28,
-        BeveledGrey = 29,
-        BeveledBlack = 30,
-        BeveledRed = 31,
-        BeveledOrange = 32,
-        BeveledYellow = 33,
-        BeveledGreen = 34,
-        BeveledCyan = 35,
-        BeveledBlue = 36,
-        BeveledPurple = 37,
-        //metal
-        MetalSilver = 38,
-        MetalSteel = 39,
-        MetalIron = 40,
-        MetalGold = 41,
-        MetalBronze = 42,
-        MetalCopper = 43,
-        //glass
-        GlassWhite = 45,
-        GlassBlack = 46,
-        GlassRed = 47,
-        GlassOrange = 48,
-        GlassYellow = 49,
-        GlassGreen = 50,
-        GlassCyan = 51,
-        GlassBlue = 52,
-        GlassPurple = 53,
-        GlassPink = 54,
-        //tiles
-        TilesWhite = 72,
-        TilesGrey = 73,
-        TilesBlack = 74,
-        TilesRed = 75,
-        TilesOrange = 76,
-        TilesYellow = 77,
-        TilesGreen = 78,
-        TilesCyan = 79,
-        TilesBlue = 80,
-        TilesPurple = 81,
-        //special
-        Black = 12,
-        Secret = 95,
-        Clear = 96,
-        //signs
-        SignWood = 55,
-        SignRed = 56,
-        SignGreen = 57,
-        SignBlue = 58,
-        //coins
-        GoldCoin = 11,
-        //control
-        Spawn = 44,
-        Godmode = 17,
-        Crown = 70,
-        Portal = 59,
-        //actions(effects)
-        EffectClear = 92,
-        EffectMultiJump = 93,
-        EffectHighJump = 94,
-        #endregion
-        #region bg
-        //basic bg
-        BgBasicWhite = 60,
-        BgBasicGrey = 61,
-        BgBasicBlack = 62,
-        BgBasicRed = 63,
-        BgBasicOrange = 64,
-        BgBasicYellow = 65,
-        BgBasicGreen = 66,
-        BgBasicCyan = 67,
-        BgBasicBlue = 68,
-        BgBasicPurple = 69,
-        //tiles bg
-        BgTilesWhite = 82,
-        BgTilesGrey = 83,
-        BgTilesBlack = 84,
-        BgTilesRed = 85,
-        BgTilesOrange = 86,
-        BgTilesYellow = 87,
-        BgTilesGreen = 88,
-        BgTilesCyan = 89,
-        BgTilesBlue = 90,
-        BgTilesPurple = 91,
-        #endregion
-        */
-        #endregion
-
-        #region new
-        //NEW
         //brick
         BrickWhite = 99,
         BrickBlack = 100,
@@ -245,7 +259,6 @@ namespace EEWData
         #endregion
         //hazards
         HazardsSawBlade = 141,
-        #endregion
     }
 
     public enum CustomMessageType
@@ -272,21 +285,8 @@ namespace EEWData
         Unit = 15,
     }
 
-    //public class Player : EEUData.Player
-    //{
-    //    public Player(int id, string username) : base(id, username) { }
-
-    //    public string UsernameColor { get; set; }
-    //}
-
     public class PlayerData : EEUData.PlayerData
     {
-        //protected override void ParseInit(Message m, out int index)
-        //{
-        //    //var id = BotId = m.GetInt(0);
-        //    //Players.Add(id, new Player(id, m.GetString(1)) { Smiley = (SmileyType)m.GetInt(2), X = m.GetDouble(4), Y = m.GetDouble(5), IsBot = true });
-
-        //}
         public ConcurrentDictionary<int, string> UsernameColors = new ConcurrentDictionary<int, string>();
         public override void Parse(Message m)
         {
@@ -320,25 +320,22 @@ namespace EEWData
     {
         static WorldData()
         {
-            //Stopwatch stopwatch = Stopwatch.StartNew();
             var dict = new Dictionary<ushort, int>();
-            foreach (var item in EEUData.WorldData.BlockColors)
-            {
-                if (item.Key == (ushort)BlockId.CoinBlue) continue;//this conflicts with CustomBlockId.FaceHappy, so we skip it
-                dict.Add(item.Key, item.Value);
-            }
             foreach (var item in EEWData.WorldData.EEWBlockColors)
             {
                 dict.Add(item.Key, item.Value);
             }
+            foreach (var item in EEUData.WorldData.BlockColors)
+            {
+                if (dict.ContainsKey(item.Key)) continue;//skip conflicting blocks
+                dict.Add(item.Key, item.Value);
+            }
             BlockColors = dict;
-            //stopwatch.Stop();
             //foreach (var item in dict)
             //{
             //    var c = item.Value;
             //    Console.WriteLine($"{(!int.TryParse(((BlockId)item.Key).ToString(), out int _) ? ((BlockId)item.Key).ToString() : ((CustomBlockId)item.Key).ToString())} #{c.ToString("X6")}");
             //}
-            //Console.WriteLine($"Initializing WorldData (BlockColors): {stopwatch.Elapsed}");
         }
 
         protected override void ParseInit(Message m, bool deserializeStuff = true)
@@ -380,10 +377,62 @@ namespace EEWData
             this.Zones = DeserializeZoneData(mlist, this.Width, this.Height, ref index);
         }
 
-        public static new Dictionary<ushort, int> BlockColors { get; protected set; }
+        public static new Block[,,] DeserializeBlockData(List<object> m, int width, int height, ref int index)
+        {
+            var blocks = new Block[2, width, height];
 
-        //protected static Lazy<Dictionary<int, int>> BlockColorsFromEEUAndEEW;
-        protected static readonly Dictionary<ushort, int> EEWBlockColors = new Dictionary<ushort, int>()
+            for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
+                {
+                    int value = 0;
+                    if (m[index++] is int iValue)
+                        value = iValue;
+
+                    var backgroundId = value >> 16;
+                    var foregroundId = 65535 & value;
+
+                    blocks[0, x, y] = new Block(backgroundId);
+                    switch (foregroundId)
+                    {
+                        case (int)BlockId.SignWood:
+                        case (int)BlockId.SignRed:
+                        case (int)BlockId.SignGreen:
+                        case (int)BlockId.SignBlue:
+                            {
+                                string text = (string)m[index++];
+                                int morph = (int)m[index++];
+                                blocks[1, x, y] = new Sign(foregroundId, text, morph);
+                                break;
+                            }
+
+                        case (int)BlockId.Portal:
+                            {
+                                int rotation = (int)m[index++];
+                                int p_id = (int)m[index++];
+                                int t_id = (int)m[index++];
+                                bool flip = (bool)m[index++];
+                                blocks[1, x, y] = new Portal(foregroundId, rotation, p_id, t_id, flip);
+                                break;
+                            }
+
+                        case (int)BlockId.EffectClear:
+                        case (int)BlockId.EffectMultiJump:
+                        case (int)BlockId.EffectHighJump:
+                            {
+                                int r = (foregroundId == (int)BlockId.EffectClear) ? 0 : (int)m[index++];
+                                blocks[1, x, y] = new Effect(foregroundId, r);
+                                break;
+                            }
+
+                        default: blocks[1, x, y] = new Block(foregroundId); break;
+                    }
+                }
+            return blocks;
+        }
+
+        public static readonly new Dictionary<ushort, int> BlockColors;
+
+        public static readonly Dictionary<ushort, int> EEWBlockColors = new Dictionary<ushort, int>()
         {
             //brick
             { (ushort)CustomBlockId.BrickWhite, 10131601 },
@@ -436,68 +485,5 @@ namespace EEWData
             //hazards
             { (ushort)CustomBlockId.HazardsSawBlade, -1 },
         };
-
-    }
-    public static class ConnectionExtensions
-    {
-        public static string ChatPrefixText { get; set; } = "[Bot] ";
-        public static void PlaceBlock(this IConnection con, int layer, int x, int y, CustomBlockId id, params object[] args) => SendL(con, MessageType.PlaceBlock, new object[] { layer, x, y, (int)id }.Concat(args).ToArray());
-        public static void PlaceBlock(this IConnection con, int layer, int x, int y, BlockId id, params object[] args) => SendL(con, MessageType.PlaceBlock, new object[] { layer, x, y, (int)id }.Concat(args).ToArray());
-        public static void PlaceBlock(this IConnection con, int layer, int x, int y, int id, params object[] args) => SendL(con, MessageType.PlaceBlock, new object[] { layer, x, y, id }.Concat(args).ToArray());
-        public static void PlaceBlock(this IConnection con, int l, int x, int y, Block block)
-        {
-            object[] args;
-            switch (block)
-            {
-                case Effect b:
-                    args = new object[] { b.Amount };
-                    break;
-                case Sign b:
-                    args = new object[] { b.Text, b.Morph };
-                    break;
-                case Portal b:
-                    args = new object[] { b.Rotation, b.ThisId, b.TargetId, b.Flipped };
-                    break;
-                case Block b:
-                    args = new object[0];
-                    break;
-                default:
-                    throw new InvalidOperationException();
-            }
-            PlaceBlock(con, l, x, y, (BlockId)block.Id, args);
-        }
-        public static void ChatRespond(this IConnection con, string username, string message, string prefix = null) => ChatPrefix(con, $"@{username}: {message}", prefix);
-        public static void ChatPrefix(this IConnection con, string message, string prefix = null) => Chat(con, (prefix ?? ChatPrefixText) + message);
-        public static void Chat(this IConnection con, string message) => SendL(con, MessageType.Chat, message);
-        public static void ChatDMPrefix(this IConnection con, string username, string message, string prefix = null) => ChatDM(con, username, (prefix ?? ChatPrefixText) + message);
-        public static void ChatDM(this IConnection con, string username, string message) => Chat(con, $"/pm {username} {message}");
-        public static void SetGod(this IConnection con, string username, bool hasgod) => SendL(con, MessageType.Chat, $"/god {username} {hasgod}");
-        public static void SetEdit(this IConnection con, string username, bool hasedit) => SendL(con, MessageType.Chat, $"/edit {username} {hasedit}");
-        public static void Save(this IConnection con) => SendL(con, MessageType.Chat, "/save");
-        public static void Load(this IConnection con) => SendL(con, MessageType.Chat, "/load");
-
-        private static readonly object _sendLock = new object();
-        public static bool UseLocking { get; set; } = true;
-        public static bool UseAsync { get; set; } = false;
-        public static void SendL(this IConnection con, MessageType type, params object[] args)
-        {
-            if (UseLocking)
-            {
-                lock (_sendLock)
-                {
-                    if (UseAsync)
-                        con.SendAsync(type, args);
-                    else
-                        con.Send(type, args);
-                }
-            }
-            else
-            {
-                if (UseAsync)
-                    con.SendAsync(type, args);
-                else
-                    con.Send(type, args);
-            }
-        }
     }
 }

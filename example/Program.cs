@@ -17,138 +17,18 @@ using PlayerData = EEWData.PlayerData;
 
 namespace example
 {
-    static class ConnectionExtensions
-    {
-        public const string CHATPREFIX = "[Bot] ";
-        public static void PlaceBlock(this IConnection con, int layer, int x, int y, BlockId id, params object[] args) => SendL(con, MessageType.PlaceBlock, new object[] { layer, x, y, (int)id }.Concat(args).ToArray());
-        public static void PlaceBlock(this IConnection con, int layer, int x, int y, int id, params object[] args) => SendL(con, MessageType.PlaceBlock, new object[] { layer, x, y, id }.Concat(args).ToArray());
-        public static void PlaceBlock(this IConnection con, int l, int x, int y, Block block)
-        {
-            object[] args;
-            switch (block)
-            {
-                case Effect b:
-                    args = new object[] { b.Amount };
-                    break;
-                case Sign b:
-                    args = new object[] { b.Text, b.Morph };
-                    break;
-                case Portal b:
-                    args = new object[] { b.Rotation, b.ThisId, b.TargetId, b.Flipped };
-                    break;
-                case Block b:
-                    args = new object[0];
-                    break;
-                default:
-                    throw new InvalidOperationException();
-            }
-            PlaceBlock(con, l, x, y, (BlockId)block.Id, args);
-        }
-        public static void Chat(this IConnection con, string message) => SendL(con, MessageType.Chat, message);
-        public static void ChatRespond(this IConnection con, string username, string message, string prefix = CHATPREFIX) => ChatPrefix(con, $"@{username}: {message}");
-        public static void ChatPrefix(this IConnection con, string message, string prefix = CHATPREFIX) => Chat(con, prefix + message);
-        public static void ChatDM(this IConnection con, string username, string message) => Chat(con, $"/pm {username} {message}");
-        public static void ChatDMPrefix(this IConnection con, string username, string message, string prefix = CHATPREFIX) => ChatDM(con, username, prefix + message);
-        public static void SetGod(this IConnection con, string username, bool hasgod) => SendL(con, MessageType.Chat, $"/god {username} {hasgod}");
-        public static void SetEdit(this IConnection con, string username, bool hasedit) => SendL(con, MessageType.Chat, $"/edit {username} {hasedit}");
-        public static void Save(this IConnection con) => SendL(con, MessageType.Chat, "/save");
-
-        private static readonly object _sendLock = new object();
-        public static void SendL(this IConnection con, MessageType type, params object[] args) { lock (_sendLock) con.Send(type, args); }
-    }
-    //}
-    /*
-    int index = 0;
-    for (var y = 0; y < world.Height; y++)
-    {
-        for (var x = 0; x < world.Width; x++)
-        {
-            int value = 0;
-            if (m[index++] is int iValue)
-                value = iValue;
-
-            var backgroundId = value >> 16;
-            var foregroundId = 65535 & value;
-
-            world.Blocks[0, x, y] = new Block(backgroundId);
-            switch (foregroundId)
-            {
-                case (int)BlockId.SignWood:
-                case (int)BlockId.SignRed:
-                case (int)BlockId.SignGreen:
-                case (int)BlockId.SignBlue:
-                    {
-                        string text = m.GetString(index++);
-                        int morph = m.GetInt(index++);
-                        world.Blocks[1, x, y] = new Sign(foregroundId, text, morph);
-                        break;
-                    }
-
-                case (int)BlockId.Portal:
-                    {
-                        int rotation = m.GetInt(index++);
-                        int p_id = m.GetInt(index++);
-                        int t_id = m.GetInt(index++);
-                        bool flip = m.GetBool(index++);
-                        world.Blocks[1, x, y] = new Portal(foregroundId, p_id, t_id, rotation, flip);
-                        break;
-                    }
-
-                case (int)BlockId.EffectClear:
-                case (int)BlockId.EffectMultiJump:
-                case (int)BlockId.EffectHighJump:
-                    {
-                        int r = (foregroundId == (int)BlockId.EffectClear) ? 0 : m.GetInt(index++);
-                        world.Blocks[1, x, y] = new Effect(foregroundId, r);
-                        break;
-                    }
-
-                default: world.Blocks[1, x, y] = new Block(foregroundId); break;
-            }
-        }
-    }
-    */
-    //}
     class Program
     {
-        //static EEWClient client;
-        static Client cli;
-        static Connection con;
+        static EEWClient cli;
+        static EEWConnection con;
         static WorldData world;
         static PlayerData players;
         static void Main(string[] args)
         {
-            string GetToken(bool forcenew)
-            {
-                const string TOKENPATH = "token.txt";
-                bool exists = File.Exists(TOKENPATH);
-                if (forcenew || !exists)
-                {
-                    if (!exists) File.WriteAllText(TOKENPATH, "");
-                    Console.WriteLine("Please update your token.txt.");
-                    //Environment.Exit(-7);
-                    System.Diagnostics.Process.Start(Environment.OSVersion.Platform == PlatformID.Win32NT ? "notepad.exe" : "nano", TOKENPATH).WaitForExit();
-                }
-                return File.ReadAllText(TOKENPATH);
-            }
-            void tryConnect(bool shid)
-            {
-                cli = new EEWClient(GetToken(shid));
-                cli.Connect();
-            }
-            try
-            {
-                tryConnect(false);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-                cli?.Dispose();
-                tryConnect(true);
-            }
+            cli = new EEWClient();
             world = new EEWData.WorldData();
             players = new EEWData.PlayerData();
-            con = (Connection)cli.CreateWorldConnection("id");
+            con = cli.CreateWorldConnection("620055035978451");
             con.OnMessage += OnMessage;
             con.Send(MessageType.Init, 0);
             new System.Threading.Timer((_) => con.Send(MessageType.Ping), null, 5000, 5000);
@@ -158,8 +38,9 @@ namespace example
             int id = 0;
             int[] ids;
             List<int> idsl = new List<int>();
-            idsl.AddRange((Enum.GetValues(typeof(BlockId)) as BlockId[]).Select(x => (int)x));
             idsl.AddRange((Enum.GetValues(typeof(CustomBlockId)) as CustomBlockId[]).Select(x => (int)x));
+            idsl.AddRange((Enum.GetValues(typeof(BlockId)) as BlockId[]).Select(x => (int)x));
+            idsl = idsl.Distinct().ToList();
             //ids = new int[idsl.Count];
             ids = idsl.ToArray();
             //idsl.Select(x => ids[id++] = x);

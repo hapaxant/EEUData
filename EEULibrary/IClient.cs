@@ -8,6 +8,8 @@ namespace EEUniverse.Library
     /// </summary>
     public interface IClient : IDisposable
     {
+        bool Connected { get; }
+
         /// <summary>
         /// An event that raises when the client receives a message.
         /// </summary>
@@ -59,17 +61,20 @@ namespace EEUniverse.Library
         /// Sends a message to the server as an asynchronous operation.
         /// </summary>
         /// <param name="message">The message to send.</param>
-        /*public*/ Task SendAsync(Message message);
+        /*public*/
+        Task SendAsync(Message message);
 
         /// <summary>
         /// Creates a connection with the lobby.
         /// </summary>
-        /*public*/ IConnection CreateLobbyConnection();
+        /*public*/
+        IConnection CreateLobbyConnection();
 
         /// <summary>
         /// Creates a connection with the specified world.
         /// </summary>
         /// <param name="worldId">The world id to connect to.</param>
-        /*public*/ IConnection CreateWorldConnection(string worldId);
+        /*public*/
+        IConnection CreateWorldConnection(string worldId);
     }
 }

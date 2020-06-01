@@ -111,7 +111,7 @@ namespace EEUniverse.Library
         {
             try
             {
-                if (Data is T value)
+                if (Data[index] is T value)
                     return value;
 
                 return (T)Convert.ChangeType(Data[index], typeof(T));

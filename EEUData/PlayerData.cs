@@ -27,6 +27,7 @@ namespace EEUData
             this.Username = username;
 
             this.Effects = new ConcurrentDictionary<EffectType, int>();
+            this.Switches = new ConcurrentDictionary<int, bool>();
         }
 
         public int Id { get; set; }
@@ -51,6 +52,7 @@ namespace EEUData
         public bool Won { get; set; }
         public bool God { get; set; }
         public ConcurrentDictionary<EffectType, int> Effects { get; set; }
+        public ConcurrentDictionary<int, bool> Switches { get; set; }
     }
     public enum EffectType : int
     {
@@ -110,6 +112,13 @@ namespace EEUData
                         case (int)BlockId.EffectHighJump:
                             index += 1;
                             break;
+                        case (int)BlockId.SwitchesLocalSwitch:
+                        case (int)BlockId.SwitchesLocalReset:
+                            index += 1;
+                            break;
+                        case (int)BlockId.SwitchesLocalDoor:
+                            index += 2;
+                            break;
                     }
                 }
             TimeOffset = m.GetInt(index++);
@@ -158,7 +167,7 @@ namespace EEUData
                 case MessageType.CanGod:
                     Players[m.GetInt(0)].HasGod = m.GetBool(1);
                     break;
-                case MessageType.Effect://clear: 1, 0, 0 | multijump: 1, 1, 69 | highjump: 1, 2, 1
+                case MessageType.Effect:
                     {
                         var pid = m.GetInt(0);
                         var eid = m.GetInt(1);
@@ -203,14 +212,25 @@ namespace EEUData
                             (xk < 0 ? MovementKeys.Left : 0) | (xk > 0 ? MovementKeys.Right : 0) |
                             (yk < 0 ? MovementKeys.Up : 0) | (yk > 0 ? MovementKeys.Down : 0));
                         // Stop
+                        break;
                     }
-                    break;
                 case MessageType.PlayerSmiley:
-                    Players[m.GetInt(0)].Smiley = /*(SmileyType)*/m.GetInt(1);
+                    Players[m.GetInt(0)].Smiley = m.GetInt(1);
                     break;
                 case MessageType.Won:
                     Players[m.GetInt(0)].Won = true;
                     break;
+                case MessageType.SwitchInfo:
+                    {
+                        var pid = m.GetInt(0);
+                        var state = m.GetBool(1);
+                        var index = 1;
+                        while (++index < m.Count)
+                        {
+                            Players[pid].Switches[(int)m[index]] = state;
+                        }
+                        break;
+                    }
             }
         }
     }

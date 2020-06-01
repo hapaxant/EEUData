@@ -99,6 +99,10 @@ namespace EEUData
         EffectClear = 92,
         EffectMultiJump = 93,
         EffectHighJump = 94,
+        //switches
+        SwitchesLocalSwitch = 98,
+        SwitchesLocalReset = 99,
+        SwitchesLocalDoor = 100,
         #endregion
         #region bg
         //basic bg
@@ -286,17 +290,17 @@ namespace EEUData
             { (ushort)BlockId.EffectClear, -1 },
             { (ushort)BlockId.EffectMultiJump, -1 },
             { (ushort)BlockId.EffectHighJump, -1 },
+            //switches
+            { (ushort)BlockId.SwitchesLocalSwitch, -1 },
+            { (ushort)BlockId.SwitchesLocalReset, -1 },
+            { (ushort)BlockId.SwitchesLocalDoor, -1 },
         };
-        //public static int FromBlockColorToArgb(int blockcolor) => unchecked((int)0xff000000) | (blockcolor - int.MinValue);
         public static int FromBlockColorToArgb(int blockcolor)
         {
             unchecked
             {
                 return (blockcolor >= 0) ? ((int)0xff000000 | blockcolor) : ((blockcolor == -1) ? 0 : 1);
             }
-            //if (blockcolor >= 0)
-            //    return unchecked((int)0xff000000 | blockcolor);
-            //else return blockcolor == -1 ? 0 : 1;
         }
         public static int FromArgbToBlockColor(int argb)
         {
@@ -356,6 +360,21 @@ namespace EEUData
                                 break;
                             }
 
+                        case (int)BlockId.SwitchesLocalSwitch:
+                        case (int)BlockId.SwitchesLocalReset:
+                            {
+                                int c = (int)m[index++];
+                                blocks[1, x, y] = new Switch(foregroundId, c);
+                                break;
+                            }
+                        case (int)BlockId.SwitchesLocalDoor:
+                            {
+                                int c = (int)m[index++];
+                                bool f = (bool)m[index++];
+                                blocks[1, x, y] = new Switch(foregroundId, c, f);
+                                break;
+                            }
+
                         default: blocks[1, x, y] = new Block(foregroundId); break;
                     }
                 }
@@ -411,5 +430,17 @@ namespace EEUData
         public Effect(int blockId = (int)BlockId.EffectClear, int amount = 0, int playerId = 0) : base(blockId, playerId) => this.Amount = amount;
 
         public int Amount { get; set; }
+    }
+    public class Switch : Block
+    {
+        public Switch(BlockId blockId = BlockId.SwitchesLocalSwitch, int channel = 0, bool inverted = false, int playerId = 0) : this((int)blockId, channel, inverted, playerId) { }
+        public Switch(int blockId = (int)BlockId.SwitchesLocalSwitch, int channel = 0, bool inverted = false, int playerId = 0) : base(blockId, playerId)
+        {
+            this.Channel = channel;
+            this.Inverted = inverted;
+        }
+
+        public int Channel { get; set; }
+        public bool Inverted { get; set; }
     }
 }
