@@ -72,22 +72,22 @@ namespace EEWData
                 token = _token = result.Substring(result.LastIndexOf('"') + 1);
             }
         }
-        public override void Connect() => ConnectAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-        public override Task ConnectAsync()
+        public override void Connect()
         {
             try
             {
-                base.Dispose(false);
                 if (_token == null) _token = GetToken(false, StartEditor);
-                return base.ConnectAsync();
+                base.Dispose(false);
+                base.Connect();
             }
             catch//todo: add suitable exceptions
             {
-                base.Dispose(false);
                 _token = GetToken(true, StartEditor);
-                return base.ConnectAsync();
+                base.Dispose(false);
+                base.Connect();
             }
         }
+        public override Task ConnectAsync() => Task.Run(() => Connect());
         public new EEWConnection CreateWorldConnection(string worldId)
         {
             if (!this.Connected) this.Connect();
