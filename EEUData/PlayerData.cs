@@ -35,8 +35,6 @@ namespace EEUData
         public int Smiley { get; set; }
         public double X { get; set; }
         public double Y { get; set; }
-        //i think?
-        //public bool IsJumping { get; set; }
         public MovementKeys Keys { get; set; }
 
         public bool IsBot { get; set; }
@@ -126,7 +124,7 @@ namespace EEUData
             var role = m.GetInt(index++);
 
             var id = BotId = m.GetInt(0);
-            Players.Add(id, new Player(id, m.GetString(1)) { Smiley = /*(SmileyType)*/m.GetInt(2), X = m.GetDouble(4), Y = m.GetDouble(5), IsBot = true, IsOwner = isOwner, Role = role });
+            Players.Add(id, new Player(id, m.GetString(1)) { Smiley = m.GetInt(2), X = m.GetDouble(4), Y = m.GetDouble(5), IsBot = true, IsOwner = isOwner, Role = role });
         }
         public virtual void Parse(Message m)
         {
@@ -136,7 +134,7 @@ namespace EEUData
                     ParseInit(m, out _);
                     break;
                 case MessageType.PlayerAdd://existing players
-                    {//todo (like anything else)
+                    {//todo
                         var id = m.GetInt(0);
                         Players.Add(id, new Player(id, m.GetString(1)) { X = m.GetDouble(7), Y = m.GetDouble(8), });
                     }
@@ -146,7 +144,7 @@ namespace EEUData
                         var id = m.GetInt(0);
                         Players.Add(id, new Player(id, m.GetString(1))
                         {
-                            Smiley = /*(SmileyType)*/m.GetInt(2),
+                            Smiley = m.GetInt(2),
                             Time = m.GetDouble(3),
                             X = m.GetDouble(4),
                             Y = m.GetDouble(5),
@@ -223,11 +221,13 @@ namespace EEUData
                 case MessageType.SwitchInfo:
                     {
                         var pid = m.GetInt(0);
+                        var p = Players[pid];
                         var state = m.GetBool(1);
                         var index = 1;
                         while (++index < m.Count)
                         {
-                            Players[pid].Switches[(int)m[index]] = state;
+                            var c = (int)m[index];
+                            p.Switches[c] = state;
                         }
                         break;
                     }

@@ -72,43 +72,19 @@ namespace EEWData
                 token = _token = result.Substring(result.LastIndexOf('"') + 1);
             }
         }
-        //public bool Connect(int timeout = 4269)
-        //{
-        //    //using (var mre = new ManualResetEventSlim())
-        //    //{
-        //    //ConnectAsync().ContinueWith((_) => mre.Set());
-        //    var task = ConnectAsync();
-        //    task.Wait(timeout);
-        //    //var result = mre.Wait(timeout);
-        //    if (!task.IsCompleted)
-        //    {
-        //        base.Dispose();
-        //        return false;
-        //    }
-        //    if (task.IsFaulted)
-        //    {
-        //        base.Dispose();
-        //        throw task.Exception;
-        //    }
-        //    //if (!result) base.Dispose();//clean up socket
-        //    //return result;
-        //    return true;
-        //    //}
-        //}
-        public new void Connect() => ConnectAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-        public new Task ConnectAsync()
+        public override void Connect() => ConnectAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+        public override Task ConnectAsync()
         {
-            if (_token == null)
-                _token = GetToken(false, StartEditor);
             try
             {
                 base.Dispose(false);
+                if (_token == null) _token = GetToken(false, StartEditor);
                 return base.ConnectAsync();
             }
             catch//todo: add suitable exceptions
             {
-                _token = GetToken(true, StartEditor);
                 base.Dispose(false);
+                _token = GetToken(true, StartEditor);
                 return base.ConnectAsync();
             }
         }
