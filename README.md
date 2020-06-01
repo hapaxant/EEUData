@@ -1,4 +1,4 @@
-# EEUW
+# EEUWU
 various stuff for eeuniverse/eeworlds
 
 EEUniverse.Library changed to work with websocket-sharp .net framework 4.7.2
