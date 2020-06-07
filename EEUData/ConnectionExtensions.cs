@@ -71,7 +71,6 @@ namespace EEUData
         public static void Init(this IConnection con) => SendL(con, MessageType.Init, 0);
         public static void Init(this IConnection con, int timeOffset) => SendL(con, MessageType.Init, timeOffset);
 
-
         private static readonly object _sendLock = new object();
         private static bool UseLocking { get; set; } = false;
         private static bool UseAsync { get; set; } = true;
