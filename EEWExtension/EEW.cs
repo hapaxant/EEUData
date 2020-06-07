@@ -87,7 +87,10 @@ namespace EEWData
                 base.Connect();
             }
         }
-        public override Task ConnectAsync() => Task.Run(() => Connect());
+        /// <summary>
+        /// do not use this method directly lol
+        /// </summary>
+        public override Task ConnectAsync() => Task.Run(() => base.ConnectAsync());
         public new EEWConnection CreateWorldConnection(string worldId)
         {
             if (!this.Connected) this.Connect();
@@ -100,9 +103,9 @@ namespace EEWData
         public bool Connected { get => _client.Connected; }
 
         public string ChatPrefixText { get; set; } = "[Bot] ";
-        public void PlaceBlock(int layer, int x, int y, CustomBlockId id, params object[] args) => SendL(MessageType.PlaceBlock, new object[] { layer, x, y, (int)id }.Concat(args).ToArray());
-        public void PlaceBlock(int layer, int x, int y, BlockId id, params object[] args) => SendL(MessageType.PlaceBlock, new object[] { layer, x, y, (int)id }.Concat(args).ToArray());
-        public void PlaceBlock(int layer, int x, int y, int id, params object[] args) => SendL(MessageType.PlaceBlock, new object[] { layer, x, y, id }.Concat(args).ToArray());
+        //public void PlaceBlock(int layer, int x, int y, CustomBlockId id, params object[] args) => SendL(MessageType.PlaceBlock, new object[] { layer, x, y, (int)id }.Concat(args).ToArray());
+        //public void PlaceBlock(int layer, int x, int y, BlockId id, params object[] args) => SendL(MessageType.PlaceBlock, new object[] { layer, x, y, (int)id }.Concat(args).ToArray());
+        //public void PlaceBlock(int layer, int x, int y, int id, params object[] args) => SendL(MessageType.PlaceBlock, new object[] { layer, x, y, id }.Concat(args).ToArray());
         public void PlaceBlock(int l, int x, int y, Block block)
         {
             object[] args;
@@ -123,7 +126,7 @@ namespace EEWData
                 default:
                     throw new InvalidOperationException();
             }
-            PlaceBlock(l, x, y, (BlockId)block.Id, args);
+            ((Connection)this).PlaceBlock(l, x, y, (BlockId)block.Id, args);
         }
         public void ChatRespond(string username, string message, string prefix = null) => ChatPrefix($"@{username}: {message}", prefix);
         public void ChatPrefix(string message, string prefix = null) => Chat((prefix ?? ChatPrefixText) + message);
@@ -134,8 +137,12 @@ namespace EEWData
         public void SetEdit(string username, bool hasedit) => SendL(MessageType.Chat, $"/edit {username} {hasedit}");
         public void Save() => SendL(MessageType.Chat, "/save");
         public void Load() => SendL(MessageType.Chat, "/load");
-        public bool Init(int timeout = 5000, int resendDelay = 100) => Init(timeout, resendDelay, CancellationToken.None);
-        public bool Init(int timeout = 5000, int resendDelay = 100, CancellationToken cancellationToken = default(CancellationToken))
+        private const int INITTIMEOUT = 5000;
+        private const int INITRESENDDELAY = 100;
+        public bool Init() => Init(INITTIMEOUT, INITRESENDDELAY, CancellationToken.None);
+        public bool Init(int timeout) => Init(timeout, INITRESENDDELAY, CancellationToken.None);
+        public bool Init(int timeout, int resendDelay) => Init(timeout, resendDelay, CancellationToken.None);
+        public bool Init(int timeout, int resendDelay, CancellationToken cancellationToken)
         {//when sending init normally it sometimes drops it for some reason, so we resend it continiously until we get confirmation from server here
             if (timeout < -1) throw new ArgumentOutOfRangeException(nameof(timeout));
             if (resendDelay < -1) throw new ArgumentOutOfRangeException(nameof(resendDelay));
@@ -261,37 +268,6 @@ namespace EEWData
         Unit = 15,
     }
 
-    public class PlayerData : EEUData.PlayerData
-    {
-        public ConcurrentDictionary<int, string> UsernameColors = new ConcurrentDictionary<int, string>();
-        public override void Parse(Message m)
-        {
-            switch (m.Type)
-            {
-                case MessageType.Init:
-                    base.ParseInit(m, out int index);
-                    UsernameColors.Add(m.GetInt(0), m.GetString(index));
-                    break;
-                //Players.Add(m.GetInt(0), new Player(m.GetInt(0), m.GetString(1)) { UsernameColor = m.GetString(11) });
-                //break;
-                case MessageType.PlayerAdd://existing players
-                    break;
-                case MessageType.PlayerJoin://new joining players
-                    //Players.Add(m.GetInt(0), new Player(m.GetInt(0), m.GetString(1)) {  });
-                    base.Parse(m);
-                    UsernameColors.Add(m.GetInt(0), m.GetString(11));
-                    break;
-                case MessageType.PlayerExit:
-                    base.Parse(m);
-                    UsernameColors.Remove(m.GetInt(0));
-                    break;
-                default:
-                    base.Parse(m);
-                    break;
-            }
-        }
-    }
-
     public class WorldData : EEUData.WorldData
     {
         static WorldData()
@@ -306,12 +282,54 @@ namespace EEWData
                 if (dict.ContainsKey(item.Key)) continue;//skip conflicting blocks
                 dict.Add(item.Key, item.Value);
             }
-            BlockColors = dict;
+            WorldData.BlockColors = dict;
             //foreach (var item in dict)
             //{
             //    var c = item.Value;
             //    Console.WriteLine($"{(!int.TryParse(((BlockId)item.Key).ToString(), out int _) ? ((BlockId)item.Key).ToString() : ((CustomBlockId)item.Key).ToString())} #{c.ToString("X6")}");
             //}
+        }
+
+        public static new int GetARGBColor(ushort fg = (ushort)BlockId.Black, ushort bg = (ushort)BlockId.Black, int backgroundColor = -1) => WorldData.FromBlockColorToARGB(GetBlockColor(fg, bg, backgroundColor));
+        public static new int GetBlockColor(ushort fg = (ushort)BlockId.Black, ushort bg = (ushort)BlockId.Black, int backgroundColor = -1)
+        {
+            unchecked
+            {
+                var ct = WorldData.BlockColors;
+                const int BLACK = 0;
+                const int TRANSPARENT = -2;
+                int c = BLACK;
+                int n = ct[fg];
+                if (n == -1) n = ct[bg];
+                if (n == -1 && bg != 0) n = -2;
+                if (n == -2) c = TRANSPARENT;
+                if (n == -1) c = backgroundColor != -1 ? backgroundColor : BLACK;
+                if (n >= 0) c = n;
+                return c;
+                //var ct = WorldData.BlockColors;
+                //const int BLACK = (int)0xff000000;
+                //const int TRANSPARENT = -2;
+                //int c = BLACK;
+                //int n = ct[fg];
+                //if (n == -1) n = ct[bg];
+                //if (n == -1) n = backgroundColor;
+                //if (n == -1) c = BLACK;
+                //if (n == -2) c = TRANSPARENT;
+                //if (n >= 0) c = n;
+                //return c;
+            }
+        }
+        public override int GetARGBColor(int x, int y, int layer = -1, int backgroundColor = -2) => GetBlockColor(x, y, layer, backgroundColor);
+        public override int GetBlockColor(int x, int y, int layer = -1, int backgroundColor = -2)
+        {
+            if (backgroundColor == -2) backgroundColor = this.BackgroundColor;//i think -2 can be an actual color in the world? but i really doubt that's going to be a problem
+            if (layer < -1 && layer > 1) throw new ArgumentOutOfRangeException(nameof(layer));
+            if (layer == -1)
+                return WorldData.GetBlockColor((ushort)this.Blocks[1, x, y].Id, (ushort)this.Blocks[0, x, y].Id, backgroundColor);
+            else if (layer == 0)
+                return WorldData.GetBlockColor((ushort)BlockId.Empty, (ushort)this.Blocks[0, x, y].Id, backgroundColor);
+            else //if (layer == 1)
+                return WorldData.GetBlockColor((ushort)this.Blocks[1, x, y].Id, (ushort)BlockId.Empty, backgroundColor);
         }
 
         protected override void ParseInit(Message m, bool deserializeStuff = true)
@@ -326,7 +344,7 @@ namespace EEWData
                 index++;//isOwner
                 index++;//role
                 index++;//usernameColor (custom)
-                this.Zones = DeserializeZoneData(mlist, this.Width, this.Height, ref index);
+                this.Zones = new ConcurrentDictionary<int, Zone>(DeserializeZoneData(mlist, this.Width, this.Height, ref index));
             }
         }
 
@@ -336,6 +354,29 @@ namespace EEWData
             {
                 case (MessageType)CustomMessageType.Loadlevel:
                     LoadLevel(m);
+                    break;
+                case MessageType.PlaceBlock:
+                    var id = (int)m[4];
+                    //fix block conflicts
+                    if (Enum.IsDefined(typeof(BlockId), id)) base.Parse(m);
+                    else switch ((CustomBlockId)id)
+                        {//custom block declarations
+                            default:
+                                Blocks[(int)m[1], (int)m[2], (int)m[3]] = new Block(id, (int)m[0]);
+                                break;
+                        }
+                    //switch ((BlockId)id)
+                    //{
+                    //    case BlockId.SwitchesLocalSwitch://those don't exist in eew, and cause conflicts
+                    //    case BlockId.SwitchesLocalReset:
+                    //    case BlockId.SwitchesLocalDoor:
+                    //        int pid = m.GetInt(0), l = m.GetInt(1), x = m.GetInt(2), y = m.GetInt(3);
+                    //        Blocks[l, x, y] = new Block(id, pid);
+                    //        break;
+                    //    default:
+                    //        base.Parse(m);
+                    //        break;
+                    //}
                     break;
                 default:
                     base.Parse(m);
@@ -350,7 +391,7 @@ namespace EEWData
             var index = 0;
             var mlist = m.Data.ToList();
             this.Blocks = DeserializeBlockData(mlist, this.Width, this.Height, ref index);
-            this.Zones = DeserializeZoneData(mlist, this.Width, this.Height, ref index);
+            this.Zones = new ConcurrentDictionary<int, Zone>(DeserializeZoneData(mlist, this.Width, this.Height, ref index));
         }
 
         public static new Block[,,] DeserializeBlockData(List<object> m, int width, int height, ref int index)
@@ -368,46 +409,53 @@ namespace EEWData
                     var foregroundId = 65535 & value;
 
                     blocks[0, x, y] = new Block(backgroundId);
-                    switch (foregroundId)
-                    {
-                        case (int)BlockId.SignWood:
-                        case (int)BlockId.SignRed:
-                        case (int)BlockId.SignGreen:
-                        case (int)BlockId.SignBlue:
-                            {
-                                string text = (string)m[index++];
-                                int morph = (int)m[index++];
-                                blocks[1, x, y] = new Sign(foregroundId, text, morph);
-                                break;
-                            }
-
-                        case (int)BlockId.Portal:
-                            {
-                                int rotation = (int)m[index++];
-                                int p_id = (int)m[index++];
-                                int t_id = (int)m[index++];
-                                bool flip = (bool)m[index++];
-                                blocks[1, x, y] = new Portal(foregroundId, rotation, p_id, t_id, flip);
-                                break;
-                            }
-
-                        case (int)BlockId.EffectClear:
-                        case (int)BlockId.EffectMultiJump:
-                        case (int)BlockId.EffectHighJump:
-                            {
-                                int r = (foregroundId == (int)BlockId.EffectClear) ? 0 : (int)m[index++];
-                                blocks[1, x, y] = new Effect(foregroundId, r);
-                                break;
-                            }
-
-                        default: blocks[1, x, y] = new Block(foregroundId); break;
-                    }
+                    blocks[1, x, y] = HandleBlock(m, foregroundId, ref index);
                 }
             return blocks;
         }
+        internal protected static new Block HandleBlock(List<object> m, int foregroundId, ref int index, bool returnBlocks = true)
+        {
+            switch (foregroundId)
+            {
+                case (int)BlockId.SignWood:
+                case (int)BlockId.SignRed:
+                case (int)BlockId.SignGreen:
+                case (int)BlockId.SignBlue:
+                    {
+                        string text = (string)m[index++];
+                        int morph = (int)m[index++];
+                        if (!returnBlocks) return null;
+                        return new Sign(foregroundId, text, morph);
+                    }
+
+                case (int)BlockId.Portal:
+                    {
+                        int rotation = (int)m[index++];
+                        int p_id = (int)m[index++];
+                        int t_id = (int)m[index++];
+                        bool flip = (bool)m[index++];
+                        if (!returnBlocks) return null;
+                        return new Portal(foregroundId, rotation, p_id, t_id, flip);
+                    }
+
+                case (int)BlockId.EffectClear:
+                case (int)BlockId.EffectMultiJump:
+                case (int)BlockId.EffectHighJump:
+                    {
+                        int r = (foregroundId == (int)BlockId.EffectClear) ? 0 : (int)m[index++];
+                        if (!returnBlocks) return null;
+                        return new Effect(foregroundId, r);
+                    }
+
+                default:
+                    {
+                        if (!returnBlocks) return null;
+                        return new Block(foregroundId);
+                    }
+            }
+        }
 
         public static readonly new Dictionary<ushort, int> BlockColors;
-
         public static readonly Dictionary<ushort, int> EEWBlockColors = new Dictionary<ushort, int>()
         {
             //brick
@@ -461,5 +509,58 @@ namespace EEWData
             //hazards
             { (ushort)CustomBlockId.HazardsSawBlade, -1 },
         };
+    }
+
+    public class PlayerData : EEUData.PlayerData
+    {
+        public ConcurrentDictionary<int, string> UsernameColors = new ConcurrentDictionary<int, string>();
+        protected override void ParseInit(Message m, out int index)
+        {
+            index = 11;
+            int width = m.GetInt(9), height = m.GetInt(10);
+            for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
+                {
+                    int value = 0;
+                    if (m[index++] is int iValue)
+                        value = iValue;
+
+                    var foregroundId = 65535 & value;
+                    WorldData.HandleBlock(m.Data, foregroundId, ref index, false);
+                }
+            this.TimeOffset = m.GetInt(index++);
+            var canEdit = m.GetBool(index++);
+            var role = m.GetInt(index++);
+
+            var id = BotId = m.GetInt(0);
+            Players.Add(id, new Player(id, m.GetString(1)) { Smiley = m.GetInt(2), X = m.GetDouble(4), Y = m.GetDouble(5), IsBot = true, HasEdit = canEdit, Rank = (Rank)role });
+        }
+        public override void Parse(Message m)
+        {
+            switch (m.Type)
+            {
+                case MessageType.Init:
+                    this.ParseInit(m, out int index);
+                    UsernameColors.Add(m.GetInt(0), m.GetString(index));
+                    break;
+                case MessageType.PlayerAdd://existing players
+                    //todo? last time i checked this is never received
+                    break;
+                case MessageType.PlayerJoin://new joining players
+                    //Players.Add(m.GetInt(0), new Player(m.GetInt(0), m.GetString(1)) {  });
+                    base.Parse(m);
+                    var pid = (int)m[0];
+                    Players[pid].LocalSwitches = null;
+                    UsernameColors.Add(pid, m.GetString(11));
+                    break;
+                case MessageType.PlayerExit:
+                    base.Parse(m);
+                    UsernameColors.Remove(m.GetInt(0));
+                    break;
+                default:
+                    base.Parse(m);
+                    break;
+            }
+        }
     }
 }

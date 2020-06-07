@@ -27,21 +27,21 @@ namespace EEUData
     public partial class WorldData
     {
         public ConcurrentDictionary<int, Zone> Zones { get; protected set; }
-        public static ConcurrentDictionary<int, Zone> DeserializeZoneData(List<object> initData, int width, int height, ref int index)
+        public static Dictionary<int, Zone> DeserializeZoneData(List<object> m, int width, int height, ref int index)
         {
             var zones = new Dictionary<int, Zone>();
 
-            var m = new Message(ConnectionScope.World, MessageType.Init, initData);
-            var totalZoneCount = m.GetInt(index++);
+            //var m = new Message(ConnectionScope.World, MessageType.Init, initData);
+            var totalZoneCount = (int)m[index++];
             for (var i = 0; i < totalZoneCount; i++)
             {
-                var zoneId = m.GetInt(index++);
-                var zoneType = m.GetInt(index++);
-                var startX = m.GetInt(index++);
-                var startY = m.GetInt(index++);
-                var endX = m.GetInt(index++);
-                var endY = m.GetInt(index++);
-                var zoneByteArray = m.GetBytes(index++);
+                var zoneId = (int)m[index++];
+                var zoneType = (int)m[index++];
+                var startX = (int)m[index++];
+                var startY = (int)m[index++];
+                var endX = (int)m[index++];
+                var endY = (int)m[index++];
+                var zoneByteArray = (byte[])m[index++];
                 var zoneMap = new bool[width, height];
 
                 for (int y = 0; y < height; y++)
@@ -60,15 +60,10 @@ namespace EEUData
                     }
                 }
 
-                zones.Add(zoneId, new Zone(zoneId, zoneType)
-                {
-                    //Id = zoneId,
-                    //Type = (ZoneType)zoneType,
-                    Map = zoneMap
-                });
+                zones.Add(zoneId, new Zone(zoneId, zoneType) { Map = zoneMap });
             }
 
-            return new ConcurrentDictionary<int, Zone>(zones);
+            return zones;
         }
     }
 }

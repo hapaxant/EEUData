@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -31,13 +32,13 @@ namespace EEUData
             if (deserializeStuff)
             {
                 var index = 11;
-                var mlist = m.Data.ToList();
+                var mlist = m.Data;
                 this.Blocks = DeserializeBlockData(mlist, this.Width, this.Height, ref index);
                 index++;//timeOffset
                 index++;//isOwner
                 index++;//role
                 //usernameColor (custom)
-                this.Zones = DeserializeZoneData(mlist, this.Width, this.Height, ref index);
+                this.Zones = new ConcurrentDictionary<int, Zone>(DeserializeZoneData(mlist, this.Width, this.Height, ref index));
             }
         }
         public virtual void Parse(Message m)
@@ -47,16 +48,16 @@ namespace EEUData
                 case MessageType.Init:
                     ParseInit(m);
                     break;
-                case MessageType.Clear:
-                    System.Diagnostics.Trace.Assert(m.Count == 0);
-                    HandleClear();
-                    Zones.Clear();
+                case MessageType.PlaceBlock:
+                    {
+                        int l = m.GetInt(1), x = m.GetInt(2), y = m.GetInt(3), id = m.GetInt(4);
+                        Blocks[l, x, y] = HandleBlock(m);
+                        break;
+                    }
+                case MessageType.Meta:
+                    Title = m.GetString(0);
                     break;
-                case MessageType.BgColor://[0] = int
-                    System.Diagnostics.Trace.Assert(m.Count == 1);
-                    BackgroundColor = m.GetInt(0);
-                    break;
-                case MessageType.ZoneCreate://1, 0 | 2, 1
+                case MessageType.ZoneCreate:
                     {
                         System.Diagnostics.Trace.Assert(m.Count == 2);
                         var id = m.GetInt(0);
@@ -64,6 +65,9 @@ namespace EEUData
                         Zones.Add(id, new Zone(id, type) { Map = new bool[Width, Height] });
                         break;
                     }
+                case MessageType.ZoneDelete:
+                    Zones.Remove(m.GetInt(0));
+                    break;
                 case MessageType.ZoneEdit:
                     {
                         System.Diagnostics.Trace.Assert(m.Count == 6);
@@ -75,40 +79,15 @@ namespace EEUData
                             {
                                 Zones[id].Map[xx, yy] = mode;
                             }
-                    }
-                    break;
-                case MessageType.ZoneDelete:
-                    System.Diagnostics.Trace.Assert(m.Count == 1);
-                    Zones.Remove(m.GetInt(0));
-                    break;
-                case MessageType.PlaceBlock:
-                    {
-                        int pid = m.GetInt(0), l = m.GetInt(1), x = m.GetInt(2), y = m.GetInt(3), id = m.GetInt(4);
-                        switch ((BlockId)id)
-                        {
-                            case BlockId.SignWood:
-                            case BlockId.SignRed:
-                            case BlockId.SignGreen:
-                            case BlockId.SignBlue:
-                                Blocks[l, x, y] = new Sign(id, m.GetString(5), m.GetInt(6), pid);
-                                break;
-
-                            case BlockId.Portal:
-                                Blocks[l, x, y] = new Portal(id, m.GetInt(5), m.GetInt(6), m.GetInt(7), m.GetBool(8), pid);
-                                break;
-
-                            case BlockId.EffectClear:
-                            case BlockId.EffectMultiJump:
-                            case BlockId.EffectHighJump:
-                                Blocks[l, x, y] = new Effect(id, (id != (int)BlockId.EffectClear) ? m.GetInt(5) : 0, pid);
-                                break;
-
-                            default:
-                                Blocks[l, x, y] = new Block(id, pid);
-                                break;
-                        }
                         break;
                     }
+                case MessageType.Clear:
+                    HandleClear();
+                    Zones.Clear();
+                    break;
+                case MessageType.BgColor:
+                    BackgroundColor = m.GetInt(0);
+                    break;
             }
         }
     }

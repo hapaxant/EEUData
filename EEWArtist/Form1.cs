@@ -125,8 +125,6 @@ namespace eewartist
             ////
 
             EEWClient.StartEditor = false;
-            ConnectionExtensions.UseAsync = true;
-            ConnectionExtensions.UseLocking = false;
             trackBar1.Value = trackBar1.Maximum / 2;
             trackBar2.Value = trackBar2.Maximum / 2;
             if (File.Exists(WIDPATH)) textBox1.Text = File.ReadAllText(WIDPATH);
@@ -138,11 +136,11 @@ namespace eewartist
             checkBox1.CheckedChanged += checkBox1_CheckedChanged;
             EEWClient.TokenPath = cbfileexists ? TOKENPATH : CREDSPATH;
             radioButton2.PerformClick();
-            palette = WorldData.BlockColors.Values.Where(x => x >= 0).Select(x => Color.FromArgb(EEUData.WorldData.FromBlockColorToArgb(x))).Distinct().ToArray();
+            palette = WorldData.BlockColors.Values.Where(x => x >= 0).Select(x => Color.FromArgb(EEUData.WorldData.FromBlockColorToARGB(x))).Distinct().ToArray();
             //palettebid = new Dictionary<int, List<int>>();
             palettebid = new Dictionary<int, ushort>();
             //foreach (var item in WorldData.BlockColors.Where(x => x.Value >= 0).Select(x => new KeyValuePair<int, int>(EEWData.WorldData.FromBlockColorToArgb(x.Value), x.Key)))
-            foreach (var item in WorldData.BlockColors.Where(x => x.Value >= 0).Select(x => (EEUData.WorldData.FromBlockColorToArgb(x.Value), (ushort)x.Key)))
+            foreach (var item in WorldData.BlockColors.Where(x => x.Value >= 0).Select(x => (EEUData.WorldData.FromBlockColorToARGB(x.Value), (ushort)x.Key)))
             {
                 //if (!palettebid.ContainsKey(item.Key)) palettebid.Add(item.Key, new List<int>() { item.Value });
                 if (!palettebid.ContainsKey(item.Item1)) palettebid[item.Item1] = item.Item2;
@@ -220,7 +218,7 @@ namespace eewartist
                                 Trace.Assert(oldAlpha == 255);
                                 if (cache.ContainsKey(oldargb))
                                 {
-                                    c = Color.FromArgb(WorldData.FromBlockColorToArgb(WorldData.BlockColors[cache[oldargb]]));
+                                    c = Color.FromArgb(WorldData.FromBlockColorToARGB(WorldData.BlockColors[cache[oldargb]]));
                                 }
                                 else
                                 {
@@ -384,11 +382,12 @@ namespace eewartist
                 if (File.Exists(CBSTATEPATH)) File.Delete(CBSTATEPATH);
                 if (!File.Exists(path)) File.WriteAllLines(path, new[] { "username", "password" });
             }
-            /*if (e != null)*/ EditPath(path);
+            /*if (e != null)*/
+            EditPath(path);
         }
 
         EEWClient cli;
-        Connection con;
+        EEWConnection con;
         string cachedToken;
         private void button2_Click(object sender, EventArgs e)
         {
@@ -429,7 +428,7 @@ namespace eewartist
             {
                 this.InvokeX(() =>
                 {
-                    MessageBox.Show(this, "Timed out, max retry limit reached. Try again?", "Timeout", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                    MessageBox.Show(this, "Timed out, max retry limit reached. Wrong world id?", "Timeout", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                     panelMain.Enabled = true;
                 });
                 return;
@@ -454,11 +453,11 @@ namespace eewartist
                 panelMain.InvokeX(() => panelMain.Enabled = true);
                 return;
             }
-            con = (Connection)cli.CreateWorldConnection(wid);
+            con = (EEWConnection)cli.CreateWorldConnection(wid);
+            con.UseAsync = true;
+            con.UseLocking = false;
             con.OnMessage += OnMessage;
-            con.SendAsync(MessageType.Init, 0);
-            //if (!re.WaitOne(timeout))
-            if (!re.Wait(timeout))
+            if (!con.Init() || !re.Wait(timeout))//todo: clean this entire thing up
             {
                 cli?.Dispose();
                 TryConnect(wid, useToken, retries - 1, timeout + 750);

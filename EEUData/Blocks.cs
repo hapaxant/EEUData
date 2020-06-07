@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EEUniverse.Library;
 
 namespace EEUData
 {
@@ -90,6 +91,8 @@ namespace EEUData
         //coins
         CoinGold = 11,
         CoinBlue = 97,
+        CoinGoldDoor = 104,
+        CoinBlueDoor = 105,
         //control
         Spawn = 44,
         Godmode = 17,
@@ -100,9 +103,12 @@ namespace EEUData
         EffectMultiJump = 93,
         EffectHighJump = 94,
         //switches
-        SwitchesLocalSwitch = 98,
-        SwitchesLocalReset = 99,
-        SwitchesLocalDoor = 100,
+        SwitchLocal = 98,
+        SwitchLocalReset = 99,
+        SwitchLocalDoor = 100,
+        SwitchGlobal = 101,
+        SwitchGlobalReset = 102,
+        SwitchGlobalDoor = 103,
         #endregion
         #region bg
         //basic bg
@@ -139,6 +145,64 @@ namespace EEUData
         }
 
         public Block[,,] Blocks { get; protected set; }
+
+        public static int GetARGBColor(ushort fg = (ushort)BlockId.Black, ushort bg = (ushort)BlockId.Black, int backgroundColor = -1) => WorldData.FromARGBToBlockColor(GetARGBColor(fg, bg, backgroundColor));
+        public static int GetBlockColor(ushort fg = (ushort)BlockId.Black, ushort bg = (ushort)BlockId.Black, int backgroundColor = -1)
+        {
+            unchecked
+            {
+                var ct = WorldData.BlockColors;
+                const int BLACK = 0;
+                const int TRANSPARENT = -2;
+                int c = BLACK;
+                int n = ct[fg];
+                if (n == -1) n = ct[bg];
+                if (n == -1 && bg != 0) n = -2;
+                if (n == -2) c = TRANSPARENT;
+                if (n == -1) c = backgroundColor != -1 ? backgroundColor : BLACK;
+                if (n >= 0) c = n;
+                return c;
+                //var ct = WorldData.BlockColors;
+                //const int BLACK = (int)0xff000000;
+                //const int TRANSPARENT = 0;
+                //int c = BLACK;
+                //int n = ct[fg];
+                //if (n == -1) n = ct[bg];
+                //if (n == -1) n = backgroundColor;
+                //if (n == -1) c = BLACK;
+                //if (n == -2) c = TRANSPARENT;
+                //if (n >= 0) c = n;
+                //return c;
+
+                //var ct = WorldData.BlockColors;
+                //const int BLACK = (int)0xff000000;
+                //const int TRANSPARENT = 0;
+                //int c = BLACK;
+                //int n = ct[fg];
+                //if (n == -1) n = ct[bg];
+                //if (n == -1 && bg != 0) n = -2;
+                //if (n == -2) c = TRANSPARENT;
+                //if (n == -1) c = backgroundColor != -1 ? (BLACK | backgroundColor) : BLACK;
+                //if (n >= 0) c = n;
+                //return c;
+            }
+        }
+        public virtual int GetARGBColor(int x, int y, int layer = -1, int backgroundColor = -2) => GetBlockColor(x, y, layer, backgroundColor);
+        public virtual int GetBlockColor(int x, int y, int layer = -1, int backgroundColor = -2)
+        {
+            if (backgroundColor == -2) backgroundColor = this.BackgroundColor;//i think -2 can be an actual color in the world? but i really doubt that's going to be a problem
+            if (layer < -1 && layer > 1) throw new ArgumentOutOfRangeException(nameof(layer));
+            //var fg = (ushort)this.Blocks[1, x, y].Id;
+            //var bg = (ushort)this.Blocks[0, x, y].Id;
+            //var empty = (ushort)BlockId.Empty;
+            //return WorldData.GetBlockColor(layer == -1 || layer == 1 ? fg : empty, layer == -1 || layer == 0 ? bg : empty, backgroundColor);
+            if (layer == -1)
+                return WorldData.GetBlockColor((ushort)this.Blocks[1, x, y].Id, (ushort)this.Blocks[0, x, y].Id, backgroundColor);
+            else if (layer == 0)
+                return WorldData.GetBlockColor((ushort)BlockId.Empty, (ushort)this.Blocks[0, x, y].Id, backgroundColor);
+            else //if (layer == 1)
+                return WorldData.GetBlockColor((ushort)this.Blocks[1, x, y].Id, (ushort)BlockId.Empty, backgroundColor);
+        }
 
         protected internal virtual void HandleClear()
         {
@@ -281,6 +345,8 @@ namespace EEUData
             //coins
             { (ushort)BlockId.CoinGold, -1 },
             { (ushort)BlockId.CoinBlue, -1 },
+            { (ushort)BlockId.CoinGoldDoor, -1 },
+            { (ushort)BlockId.CoinBlueDoor, -1 },
             //actions
             { (ushort)BlockId.Spawn, -1 },
             { (ushort)BlockId.Godmode, -1 },
@@ -291,22 +357,27 @@ namespace EEUData
             { (ushort)BlockId.EffectMultiJump, -1 },
             { (ushort)BlockId.EffectHighJump, -1 },
             //switches
-            { (ushort)BlockId.SwitchesLocalSwitch, -1 },
-            { (ushort)BlockId.SwitchesLocalReset, -1 },
-            { (ushort)BlockId.SwitchesLocalDoor, -1 },
+            { (ushort)BlockId.SwitchLocal, -1 },
+            { (ushort)BlockId.SwitchLocalReset, -1 },
+            { (ushort)BlockId.SwitchLocalDoor, -1 },
+            { (ushort)BlockId.SwitchGlobal, -1 },
+            { (ushort)BlockId.SwitchGlobalReset, -1 },
+            { (ushort)BlockId.SwitchGlobalDoor, -1 },
         };
-        public static int FromBlockColorToArgb(int blockcolor)
+        public static uint FromBlockColorToARGB(uint blockcolor) => (uint)FromBlockColorToARGB((int)blockcolor);
+        public static int FromBlockColorToARGB(int blockcolor)
         {
             unchecked
             {
-                return (blockcolor >= 0) ? ((int)0xff000000 | blockcolor) : ((blockcolor == -1) ? 0 : 1);
+                return (blockcolor != -1 && blockcolor != -2) ? ((int)0xff000000 | blockcolor) : ((blockcolor == -1) ? 0 : 1);
             }
         }
-        public static int FromArgbToBlockColor(int argb)
+        public static uint FromARGBToBlockColor(uint argb) => (uint)FromARGBToBlockColor((int)argb);
+        public static int FromARGBToBlockColor(int argb)
         {
             unchecked
             {
-                if ((argb & (int)0xff000000) != (int)0xff000000) throw new ArgumentOutOfRangeException("bits 0xff000000 need to be set.");
+                if (((argb & (int)0xff000000) != (int)0xff000000) && argb != 0 && argb != 1) throw new ArgumentOutOfRangeException("bits 0xff000000 need to be set.");
                 return (argb < 0 || argb > 1) ? (int)0x00ffffff & argb : argb == 0 ? -1 : -2;
             }
         }
@@ -328,57 +399,79 @@ namespace EEUData
                     var foregroundId = 65535 & value;
 
                     blocks[0, x, y] = new Block(backgroundId);
-                    switch (foregroundId)
-                    {
-                        case (int)BlockId.SignWood:
-                        case (int)BlockId.SignRed:
-                        case (int)BlockId.SignGreen:
-                        case (int)BlockId.SignBlue:
-                            {
-                                string text = (string)m[index++];
-                                int morph = (int)m[index++];
-                                blocks[1, x, y] = new Sign(foregroundId, text, morph);
-                                break;
-                            }
-
-                        case (int)BlockId.Portal:
-                            {
-                                int rotation = (int)m[index++];
-                                int p_id = (int)m[index++];
-                                int t_id = (int)m[index++];
-                                bool flip = (bool)m[index++];
-                                blocks[1, x, y] = new Portal(foregroundId, rotation, p_id, t_id, flip);
-                                break;
-                            }
-
-                        case (int)BlockId.EffectClear:
-                        case (int)BlockId.EffectMultiJump:
-                        case (int)BlockId.EffectHighJump:
-                            {
-                                int r = (foregroundId == (int)BlockId.EffectClear) ? 0 : (int)m[index++];
-                                blocks[1, x, y] = new Effect(foregroundId, r);
-                                break;
-                            }
-
-                        case (int)BlockId.SwitchesLocalSwitch:
-                        case (int)BlockId.SwitchesLocalReset:
-                            {
-                                int c = (int)m[index++];
-                                blocks[1, x, y] = new Switch(foregroundId, c);
-                                break;
-                            }
-                        case (int)BlockId.SwitchesLocalDoor:
-                            {
-                                int c = (int)m[index++];
-                                bool f = (bool)m[index++];
-                                blocks[1, x, y] = new Switch(foregroundId, c, f);
-                                break;
-                            }
-
-                        default: blocks[1, x, y] = new Block(foregroundId); break;
-                    }
+                    blocks[1, x, y] = HandleBlock(m, foregroundId, ref index);
                 }
             return blocks;
+        }
+        protected static Block HandleBlock(Message m)
+        {
+            if (m.Type != MessageType.PlaceBlock) throw new ArgumentException("message not of type PlaceBlock");
+            int id = (int)m[4];
+            int index = 4;
+            var block = HandleBlock(m.Data, id, ref index);
+            block.PlayerId = (int)m[0];
+            return block;
+        }
+        internal protected static Block HandleBlock(List<object> m, int foregroundId, ref int index, bool returnBlocks = true)
+        {
+            switch (foregroundId)
+            {
+                case (int)BlockId.SignWood:
+                case (int)BlockId.SignRed:
+                case (int)BlockId.SignGreen:
+                case (int)BlockId.SignBlue:
+                    {
+                        string text = (string)m[index++];
+                        int morph = (int)m[index++];
+                        if (!returnBlocks) return null;
+                        return new Sign(foregroundId, text, morph);
+                    }
+
+                case (int)BlockId.Portal:
+                    {
+                        int rotation = (int)m[index++];
+                        int p_id = (int)m[index++];
+                        int t_id = (int)m[index++];
+                        bool flip = (bool)m[index++];
+                        if (!returnBlocks) return null;
+                        return new Portal(foregroundId, rotation, p_id, t_id, flip);
+                    }
+
+                case (int)BlockId.EffectClear:
+                case (int)BlockId.EffectMultiJump:
+                case (int)BlockId.EffectHighJump:
+                    {
+                        int r = (foregroundId == (int)BlockId.EffectClear) ? 0 : (int)m[index++];
+                        if (!returnBlocks) return null;
+                        return new Effect(foregroundId, r);
+                    }
+
+                case (int)BlockId.SwitchLocal:
+                case (int)BlockId.SwitchLocalReset:
+                case (int)BlockId.SwitchGlobal:
+                case (int)BlockId.SwitchGlobalReset:
+                    {
+                        int c = (int)m[index++];
+                        if (!returnBlocks) return null;
+                        return new Switch(foregroundId, c);
+                    }
+                case (int)BlockId.SwitchGlobalDoor:
+                case (int)BlockId.SwitchLocalDoor:
+                case (int)BlockId.CoinGoldDoor:
+                case (int)BlockId.CoinBlueDoor:
+                    {
+                        int c = (int)m[index++];
+                        bool f = (bool)m[index++];
+                        if (!returnBlocks) return null;
+                        return new Switch(foregroundId, c, f);
+                    }
+
+                default:
+                    {
+                        if (!returnBlocks) return null;
+                        return new Block(foregroundId);
+                    }
+            }
         }
     }
 
@@ -388,7 +481,7 @@ namespace EEUData
         public Block(int id, int playerId = 0)
         {
             this.Id = id;
-            this.PlayerID = playerId;
+            this.PlayerId = playerId;
         }
 
         /// <summary>
@@ -398,7 +491,7 @@ namespace EEUData
         /// <summary>
         /// Player ID of whoever placed block. 0 if unknown
         /// </summary>
-        public int PlayerID { get; set; }
+        public int PlayerId { get; set; }
     }
     public class Sign : Block
     {
@@ -433,14 +526,33 @@ namespace EEUData
     }
     public class Switch : Block
     {
-        public Switch(BlockId blockId = BlockId.SwitchesLocalSwitch, int channel = 0, bool inverted = false, int playerId = 0) : this((int)blockId, channel, inverted, playerId) { }
-        public Switch(int blockId = (int)BlockId.SwitchesLocalSwitch, int channel = 0, bool inverted = false, int playerId = 0) : base(blockId, playerId)
+        public Switch(BlockId blockId = BlockId.SwitchLocal, int value = 0, bool? inverted = null, int playerId = 0) : this((int)blockId, value, inverted, playerId) { }
+        public Switch(int blockId = (int)BlockId.SwitchLocal, int value = 0, bool? inverted = null, int playerId = 0) : base(blockId, playerId)
         {
-            this.Channel = channel;
+            this.Value = value;
             this.Inverted = inverted;
         }
 
-        public int Channel { get; set; }
-        public bool Inverted { get; set; }
+        /// <summary>
+        /// channel for local/global switches, count for coin doors
+        /// </summary>
+        public int Value { get; set; }
+        /// <summary>
+        /// null for non-doors<para/>
+        /// haha tristate go brrrrrrr
+        /// </summary>
+        public bool? Inverted { get; set; }
     }
+    //public class CoinDoor : Block//basically the same as Switch, should i just combine them?//yes
+    //{
+    //    public CoinDoor(BlockId blockId = BlockId.CoinGoldDoor, int count = 0, bool inverted = false, int playerId = 0) : this((int)blockId, count, inverted, playerId) { }
+    //    public CoinDoor(int blockId = (int)BlockId.CoinGoldDoor, int count = 0, bool inverted = false, int playerId = 0) : base(blockId, playerId)
+    //    {
+    //        this.Count = count;
+    //        this.Inverted = inverted;
+    //    }
+
+    //    public int Count { get; set; }
+    //    public bool Inverted { get; set; }//with this set, it's a coin gate
+    //}
 }

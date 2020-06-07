@@ -114,6 +114,8 @@ namespace EEUniverse.Library
                 if (Data[index] is T value)
                     return value;
 
+                Debug.Fail($"Getting wrong type! Getting type {typeof(T)}, actual type is {Data[index].GetType()}, at index {index}\n" +
+                           $"{new StackTrace()}");
                 return (T)Convert.ChangeType(Data[index], typeof(T));
             }
             catch (InvalidCastException) { throw new InvalidCastException($"The value at index {index} could not be converted from type '{Data[index].GetType().Name}' to type '{typeof(T).Name}'."); }

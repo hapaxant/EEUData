@@ -91,6 +91,7 @@ namespace datavisualizer
             cli.OnDisconnect += delegate (object o, CloseEventArgs ee) { MessageBox.Show(ee.ToString(), "OnDisconnect", MessageBoxButtons.OK, MessageBoxIcon.Error); };
             con = (Connection)cli.CreateWorldConnection(wid);
             con.OnMessage += OnMessage;
+            Task.Delay(500).Wait();
             con.Send(MessageType.Init, 0);
             button1.Text = "disconnect";
             button1.Enabled = true;
@@ -101,20 +102,21 @@ namespace datavisualizer
         Graphics g;
         Bitmap b;
 
-        Color GetColor(int fg, int bg) => GetColor((ushort)fg, (ushort)bg);
-        Color GetColor(ushort fg, ushort bg)
-        {
-            var ct = WorldData.BlockColors;
-            Color c = Color.Black;
-            int n = ct[fg];
-            if (n == -1) n = ct[bg];
-            if (n == -1 && bg != 0) n = -2;
-            if (n == -2) c = Color.Transparent;
-            var wbg = world.BackgroundColor;
-            if (n == -1) c = wbg != -1 ? Color.FromArgb(unchecked((int)0xff000000 | world.BackgroundColor)) : Color.Black;
-            if (n >= 0) c = Color.FromArgb(WorldData.FromBlockColorToArgb(n));
-            return c;
-        }
+        //Color GetColor(int fg, int bg) => GetColor((ushort)fg, (ushort)bg);
+        //Color GetColor(ushort fg, ushort bg)
+        //{
+        //    var ct = WorldData.BlockColors;
+        //    Color c = Color.Black;
+        //    int n = ct[fg];
+        //    if (n == -1) n = ct[bg];
+        //    if (n == -1 && bg != 0) n = -2;
+        //    if (n == -2) c = Color.Transparent;
+        //    var wbg = world.BackgroundColor;
+        //    if (n == -1) c = wbg != -1 ? Color.FromArgb(unchecked((int)0xff000000 | world.BackgroundColor)) : Color.Black;
+        //    if (n >= 0) c = Color.FromArgb(WorldData.FromBlockColorToArgb(n));
+        //    return c;
+        //}
+        Color GetColor(int fg, int bg) => Color.FromArgb(WorldData.GetARGBColor((ushort)fg, (ushort)bg));
         void ReloadPicturebox()
         {
             int w = world.Width, h = world.Height;
