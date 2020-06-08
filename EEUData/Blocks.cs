@@ -492,6 +492,8 @@ namespace EEUData
         /// Player ID of whoever placed block. 0 if unknown
         /// </summary>
         public int PlayerId { get; set; }
+
+        public override string ToString() => $"[{nameof(Id)}:({Id}:{((BlockId)Id)}), {nameof(PlayerId)}:{PlayerId}]";
     }
     public class Sign : Block
     {
@@ -500,6 +502,8 @@ namespace EEUData
 
         public string Text { get; set; }
         public int Morph { get; set; }
+
+        public override string ToString() => $"{base.ToString().TrimEnd(']')}, {nameof(Morph)}:{Morph}, {nameof(Text)}:{Text}]";
     }
     public class Portal : Block
     {
@@ -516,6 +520,8 @@ namespace EEUData
         public int ThisId { get; set; }
         public int TargetId { get; set; }
         public bool Flipped { get; set; }
+
+        public override string ToString() => $"{base.ToString().TrimEnd(']')}, {nameof(Rotation)}:{Rotation}, {nameof(ThisId)}:{ThisId}, {nameof(TargetId)}:{TargetId}, {nameof(Flipped)}:{Flipped}]";
     }
     public class Effect : Block
     {
@@ -523,6 +529,8 @@ namespace EEUData
         public Effect(int blockId = (int)BlockId.EffectClear, int amount = 0, int playerId = 0) : base(blockId, playerId) => this.Amount = amount;
 
         public int Amount { get; set; }
+
+        public override string ToString() => $"{base.ToString().TrimEnd(']')}, {nameof(Amount)}:{Amount}]";
     }
     public class Switch : Block
     {
@@ -542,17 +550,7 @@ namespace EEUData
         /// haha tristate go brrrrrrr
         /// </summary>
         public bool? Inverted { get; set; }
-    }
-    //public class CoinDoor : Block//basically the same as Switch, should i just combine them?//yes
-    //{
-    //    public CoinDoor(BlockId blockId = BlockId.CoinGoldDoor, int count = 0, bool inverted = false, int playerId = 0) : this((int)blockId, count, inverted, playerId) { }
-    //    public CoinDoor(int blockId = (int)BlockId.CoinGoldDoor, int count = 0, bool inverted = false, int playerId = 0) : base(blockId, playerId)
-    //    {
-    //        this.Count = count;
-    //        this.Inverted = inverted;
-    //    }
 
-    //    public int Count { get; set; }
-    //    public bool Inverted { get; set; }//with this set, it's a coin gate
-    //}
+        public override string ToString() => $"{base.ToString().TrimEnd(']')}, {nameof(Value)}:{Value}, {nameof(Inverted)}:{Inverted}]";
+    }
 }
