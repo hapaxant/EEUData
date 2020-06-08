@@ -20,7 +20,7 @@ namespace EEUData
         {
             var hash = con.GetHashCode();
             if (prefix == null) { if (connectionPrefixes.ContainsKey(hash)) connectionPrefixes.Remove(hash); }
-            else connectionPrefixes[con.GetHashCode()] = prefix;
+            else connectionPrefixes[hash] = prefix;
         }
         public static string GetChatPrefix(this IConnection con)
         {
