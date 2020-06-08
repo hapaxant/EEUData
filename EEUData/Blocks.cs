@@ -204,35 +204,23 @@ namespace EEUData
                 return WorldData.GetBlockColor((ushort)this.Blocks[1, x, y].Id, (ushort)BlockId.Empty, backgroundColor);
         }
 
-        protected internal virtual void HandleClear()
+        protected internal virtual void HandleClear() => Blocks = GetClearedWorld(Width, Height, 2);
+        public static Block[,,] GetClearedWorld(int width, int height, int layers = 2)
         {
-            int w = Width, h = Height;
-            var b = new Block[2, w, h];
-            for (int y = 0; y < Height; y++)
+            if (layers < 2) throw new ArgumentOutOfRangeException(nameof(layers) + " must be at least 2.");
+
+            int w = width, h = height;
+            var b = new Block[layers, w, h];
+            for (int y = 0; y < h; y++)
             {
-                for (int x = 0; x < Width; x++)
+                for (int x = 0; x < w; x++)
                 {
                     b[0, x, y] = new Block(BlockId.Empty);
                     b[1, x, y] = new Block(x == 1 && y == 1 ? BlockId.Spawn :
-                                           (y == 0 || y == (h - 1)) || (x == 0 || x == (w - 1)) ? BlockId.BasicGrey : BlockId.Empty);
+                                          (y == 0 || y == (h - 1)) || (x == 0 || x == (w - 1)) ? BlockId.BasicGrey : BlockId.Empty);
                 }
             }
-            Blocks = b;
-            //for (int x = 0; x < Width; x++)
-            //{
-            //    Blocks[0, x, 0] = new Block(BlockId.Empty);
-            //    Blocks[0, x, Height - 1] = new Block(BlockId.Empty);
-            //    Blocks[1, x, 0] = new Block(BlockId.BasicGrey);
-            //    Blocks[1, x, Height - 1] = new Block(BlockId.BasicGrey);
-            //}
-            //for (int y = 1; y < Height - 1; y++)
-            //{
-            //    Blocks[0, 0, y] = new Block(BlockId.Empty);
-            //    Blocks[0, Width - 1, y] = new Block(BlockId.Empty);
-            //    Blocks[1, 0, y] = new Block(BlockId.BasicGrey);
-            //    Blocks[1, Width - 1, y] = new Block(BlockId.BasicGrey);
-            //}
-            //Blocks[1, 1, 1] = new Block(BlockId.Spawn);
+            return b;
         }
 
 
