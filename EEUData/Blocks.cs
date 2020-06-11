@@ -395,7 +395,7 @@ namespace EEUData
         {
             if (m.Type != MessageType.PlaceBlock) throw new ArgumentException("message not of type PlaceBlock");
             int id = (int)m[4];
-            int index = 4;
+            int index = 5;
             var block = HandleBlock(m.Data, id, ref index);
             block.PlayerId = (int)m[0];
             return block;
