@@ -107,7 +107,6 @@ namespace EEUData
         public Player this[int index]
         {
             get { return Players[index]; }
-            //internal protected set { Players[index] = value; }
         }
         public bool[] GlobalSwitches { get; protected set; }
         public ConcurrentDictionary<int, Player> Players { get; protected set; } = new ConcurrentDictionary<int, Player>();
@@ -162,7 +161,6 @@ namespace EEUData
                         {
                             LocalSwitches = new bool[MAXSWITCHESCOUNT],
                             Smiley = m.GetInt(2),
-                            //Time = m.GetDouble(3),
                             PathLastTime = m.GetDouble(3),//docs say creation timestamp, but it's not mentioned anywhere else? (besides init) //todo fix
                             X = m.GetDouble(4),
                             Y = m.GetDouble(5),
@@ -343,7 +341,7 @@ namespace EEUData
             }
         }
 
-        private static MovementKeys GetKeys(int xk, int yk, bool space)
+        protected static MovementKeys GetKeys(int xk, int yk, bool space)
         {
             return ((space ? MovementKeys.Spacebar : 0) |
                 (xk < 0 ? MovementKeys.Left : 0) | (xk > 0 ? MovementKeys.Right : 0) |

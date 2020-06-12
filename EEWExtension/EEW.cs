@@ -306,17 +306,6 @@ namespace EEWData
                 if (n == -1) c = backgroundColor != -1 ? backgroundColor : BLACK;
                 if (n >= 0) c = n;
                 return c;
-                //var ct = WorldData.BlockColors;
-                //const int BLACK = (int)0xff000000;
-                //const int TRANSPARENT = -2;
-                //int c = BLACK;
-                //int n = ct[fg];
-                //if (n == -1) n = ct[bg];
-                //if (n == -1) n = backgroundColor;
-                //if (n == -1) c = BLACK;
-                //if (n == -2) c = TRANSPARENT;
-                //if (n >= 0) c = n;
-                //return c;
             }
         }
         public override int GetARGBColor(int x, int y, int layer = -1, int backgroundColor = -2) => GetBlockColor(x, y, layer, backgroundColor);
@@ -358,25 +347,13 @@ namespace EEWData
                 case MessageType.PlaceBlock:
                     var id = (int)m[4];
                     //fix block conflicts
-                    if (Enum.IsDefined(typeof(BlockId), id)) base.Parse(m);
+                    if (Enum.IsDefined(typeof(BlockId), (ushort)id)) base.Parse(m);
                     else switch ((CustomBlockId)id)
                         {//custom block declarations
                             default:
                                 Blocks[(int)m[1], (int)m[2], (int)m[3]] = new Block(id, (int)m[0]);
                                 break;
                         }
-                    //switch ((BlockId)id)
-                    //{
-                    //    case BlockId.SwitchesLocalSwitch://those don't exist in eew, and cause conflicts
-                    //    case BlockId.SwitchesLocalReset:
-                    //    case BlockId.SwitchesLocalDoor:
-                    //        int pid = m.GetInt(0), l = m.GetInt(1), x = m.GetInt(2), y = m.GetInt(3);
-                    //        Blocks[l, x, y] = new Block(id, pid);
-                    //        break;
-                    //    default:
-                    //        base.Parse(m);
-                    //        break;
-                    //}
                     break;
                 default:
                     base.Parse(m);
@@ -544,7 +521,8 @@ namespace EEWData
                     UsernameColors.Add(m.GetInt(0), m.GetString(index));
                     break;
                 case MessageType.PlayerAdd://existing players
-                    //todo? last time i checked this is never received
+                    //this is actually never received
+                    Debugger.Break();
                     break;
                 case MessageType.PlayerJoin://new joining players
                     //Players.Add(m.GetInt(0), new Player(m.GetInt(0), m.GetString(1)) {  });
