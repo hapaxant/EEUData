@@ -24,7 +24,7 @@ namespace EEUData
         {
             if (m.Type != MessageType.Init) throw new ArgumentException("message is not of init type", nameof(m));
             Title = m.GetString(6);
-            OwnerUsername = m.GetString(7);
+            OwnerUsername = m.GetString(1);
             BackgroundColor = m.GetInt(8);
             Width = m.GetInt(9);
             Height = m.GetInt(10);
@@ -37,7 +37,6 @@ namespace EEUData
                 index++;//timeOffset
                 index++;//isOwner
                 index++;//role
-                //usernameColor (custom)
                 this.Zones = new ConcurrentDictionary<int, Zone>(DeserializeZoneData(mlist, this.Width, this.Height, ref index));
             }
         }
