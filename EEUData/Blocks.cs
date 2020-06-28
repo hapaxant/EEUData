@@ -109,6 +109,11 @@ namespace EEUData
         SwitchGlobal = 101,
         SwitchGlobalReset = 102,
         SwitchGlobalDoor = 103,
+        //brick
+        BrickClayRed = 107,
+        BrickStoneGrey = 108,
+        //platform
+        Platform = 106,
         #endregion
         #region bg
         //basic bg
@@ -133,6 +138,9 @@ namespace EEUData
         BgTilesCyan = 89,
         BgTilesBlue = 90,
         BgTilesPurple = 91,
+        //brick bg
+        BgBrickClayRed = 109,
+        BgBrickStoneGrey = 110,
         #endregion
     }
 
@@ -351,6 +359,13 @@ namespace EEUData
             { (ushort)BlockId.SwitchGlobal, -1 },
             { (ushort)BlockId.SwitchGlobalReset, -1 },
             { (ushort)BlockId.SwitchGlobalDoor, -1 },
+            //bg brick
+            { (ushort)BlockId.BrickClayRed, 10376774 },
+            { (ushort)BlockId.BrickStoneGrey, 7435382 },
+            { (ushort)BlockId.BgBrickClayRed, 7617585 },
+            { (ushort)BlockId.BgBrickStoneGrey, 4540232 },
+            //platform
+            { (ushort)BlockId.Platform, -1 },
         };
         public static uint FromBlockColorToARGB(uint blockcolor) => (uint)FromBlockColorToARGB((int)blockcolor);
         public static int FromBlockColorToARGB(int blockcolor)
@@ -454,6 +469,13 @@ namespace EEUData
                         return new Switch(foregroundId, c, f);
                     }
 
+                case (int)BlockId.Platform:
+                    {
+                        int r = (int)m[index++];
+                        if (!returnBlocks) return null;
+                        return new Platform(foregroundId, r);
+                    }
+
                 default:
                     {
                         if (!returnBlocks) return null;
@@ -540,5 +562,12 @@ namespace EEUData
         public bool? Inverted { get; set; }
 
         public override string ToString() => $"{base.ToString().TrimEnd(']')}, {nameof(Value)}:{Value}, {nameof(Inverted)}:{Inverted}]";
+    }
+    public class Platform : Block
+    {
+        public Platform(BlockId blockId = BlockId.Platform, int rotation = 0, int playerId = 0) : this((int)blockId, rotation, playerId) { }
+        public Platform(int blockId = (int)BlockId.Platform, int rotation = 0, int playerId = 0) : base(blockId, playerId) => this.Rotation = rotation;
+
+        public int Rotation { get; set; }
     }
 }
