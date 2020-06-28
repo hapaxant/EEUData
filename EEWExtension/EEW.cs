@@ -510,15 +510,7 @@ namespace EEWData
             var role = m.GetInt(index++);
 
             var id = BotId = m.GetInt(0);
-            Players.Add(id, new Player(id, m.GetString(7))
-            {
-                Smiley = m.GetInt(2),
-                X = m.GetDouble(4),
-                Y = m.GetDouble(5),
-                IsBot = true,
-                HasEdit = canEdit,
-                Rank = (Rank)role
-            });
+            Players.Add(id, new Player(id, m.GetString(1)) { Smiley = m.GetInt(2), X = m.GetDouble(4), Y = m.GetDouble(5), IsBot = true, HasEdit = canEdit, Rank = (Rank)role });
         }
         public override void Parse(Message m)
         {

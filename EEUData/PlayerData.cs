@@ -136,7 +136,7 @@ namespace EEUData
             var rank = m.GetInt(index++);
 
             var id = BotId = m.GetInt(0);
-            Players.Add(id, new Player(id, m.GetString(7))
+            Players.Add(id, new Player(id, m.GetString(1))
             {
                 Smiley = m.GetInt(2),
                 X = m.GetDouble(4),
