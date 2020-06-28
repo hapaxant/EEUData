@@ -177,6 +177,7 @@ namespace EEUData
                     break;
                 case MessageType.PlayerMove:
                     {
+                        if (!Players.ContainsKey(m.GetInt(0))) break;//believe it or not, this check is necessary
                         var p = Players[m.GetInt(0)];
 
                         p.PathLastTime = m.GetDouble(1);
