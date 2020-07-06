@@ -466,23 +466,37 @@ namespace EEUData
 
     public struct Block
     {
+        public Block(int id = 0) : this((ushort)id, 0, null) { }
         public Block(int id = 0, int playerId = 0) : this((ushort)id, playerId, null) { }
         public Block(int id = 0, ExtraBlockData data = null) : this((ushort)id, 0, data) { }
         public Block(int id = 0, int playerId = 0, ExtraBlockData data = null) : this((ushort)id, playerId, data) { }
+        public Block(BlockId id = 0) : this((ushort)id, 0, null) { }
         public Block(BlockId id = 0, int playerId = 0) : this((ushort)id, playerId, null) { }
-        public Block(ushort id = 0, int playerId = 0) : this(id, playerId, null) { }
         public Block(BlockId id = 0, ExtraBlockData data = null) : this((ushort)id, 0, data) { }
-        public Block(ushort id = 0, ExtraBlockData data = null) : this(id, 0, data) { }
         public Block(BlockId id = 0, int playerId = 0, ExtraBlockData data = null) : this((ushort)id, playerId, data) { }
+        public Block(ushort id = 0) : this(id, 0, null) { }
+        public Block(ushort id = 0, int playerId = 0) : this(id, playerId, null) { }
+        public Block(ushort id = 0, ExtraBlockData data = null) : this(id, 0, data) { }
         public Block(ushort id = 0, int playerId = 0, ExtraBlockData data = null)
         {
             this.Id = id;
             this.PlayerId = playerId;
             this.Data = data;
         }
+        /// <summary>
+        /// create block from serialized data.
+        /// </summary>
         public Block(List<object> data, ref int index, int playerId = 0)
         {
             var block = Deserialize(data, ref index);
+            this.Id = block.Id;
+            this.PlayerId = playerId;
+            this.Data = block.Data;
+        }
+        public Block(int id, List<object> data, ref int index, int playerId = 0) : this((ushort)id, data, ref index, playerId) { }
+        public Block(ushort id, List<object> data, ref int index, int playerId = 0)
+        {
+            var block = Deserialize(id, data, ref index);
             this.Id = block.Id;
             this.PlayerId = playerId;
             this.Data = block.Data;
@@ -508,16 +522,20 @@ namespace EEUData
             if (Data != null) list.AddRange(Data.Serialize());
             return list;
         }
+        public static Block Deserialize(int id, List<object> data, ref int index) => Deserialize((ushort)id, data, ref index);
+        public static Block Deserialize(ushort id, List<object> data, ref int index) => WorldData.HandleBlock(id, data, ref index);
+        /// <summary>
+        /// this reads the block id from data.
+        /// </summary>
         public static Block Deserialize(List<object> data, ref int index)
         {
-            var block = new Block();
-
+            ushort bid;
             var id = data[index++];
-            if (id is int idint) block.Id = (ushort)idint;
-            else if (id is ushort idushort) block.Id = idushort;
+            if (id is int idint) bid = (ushort)idint;
+            else if (id is ushort idushort) bid = idushort;
             else throw new ArgumentException($"unable to deserialize block id (type is {id.GetType()})");
 
-            return WorldData.HandleBlock(block.Id, data, ref index);
+            return Deserialize(bid, data, ref index);
         }
 
         /// <summary>
@@ -537,6 +555,7 @@ namespace EEUData
     public interface IFlippable { bool Flipped { get; set; } }
     public class SignBlockData : ExtraBlockData, IMorphable
     {
+        public SignBlockData(List<object> data, ref int index) => Deserialize(data, ref index);
         public SignBlockData(string text = null, int morph = 0)
         {
             this.Text = text;
@@ -550,10 +569,11 @@ namespace EEUData
         public override List<object> Serialize() => new List<object>() { Text, Morph };
         public static SignBlockData Deserialize(List<object> data, ref int index) => new SignBlockData((string)data[index++], (int)data[index++]);
 
-        public override string ToString() => $"{nameof(Text)}:\"{Text.Replace("\"","\\\"")}\", {nameof(Morph)}:{Morph}";
+        public override string ToString() => $"{nameof(Text)}:\"{Text.Replace("\"", "\\\"")}\", {nameof(Morph)}:{Morph}";
     }
     public class PortalBlockData : ExtraBlockData, IMorphable, IFlippable
     {
+        public PortalBlockData(List<object> data, ref int index) => Deserialize(data, ref index);
         public PortalBlockData(int rotation = 0, int thisId = 0, int targetId = 0, bool flipped = false)
         {
             this.Rotation = rotation;
@@ -576,6 +596,7 @@ namespace EEUData
     }
     public class EffectBlockData : ExtraBlockData, IMorphable
     {
+        public EffectBlockData(List<object> data, ref int index) => Deserialize(data, ref index);
         public EffectBlockData(int value = 0) => this.Value = value;
 
         public int Value { get; set; }
@@ -588,6 +609,7 @@ namespace EEUData
     }
     public class SwitchBlockData : ExtraBlockData, IMorphable, IFlippable
     {
+        public SwitchBlockData(List<object> data, ref int index, bool isDoor) => Deserialize(data, ref index, isDoor);
         public SwitchBlockData(int value = 0, bool? inverted = null)
         {
             this.Value = value;
@@ -609,6 +631,7 @@ namespace EEUData
     }
     public class PlatformBlockData : ExtraBlockData, IMorphable
     {
+        public PlatformBlockData(List<object> data, ref int index) => Deserialize(data, ref index);
         public PlatformBlockData(int rotation = 0) => this.Rotation = rotation;
 
         public int Rotation { get; set; }
