@@ -36,36 +36,9 @@ namespace EEUData
         public static void Init(this IConnection con) => Init(con, 0);
         public static void Init(this IConnection con, int timeOffset) => SendL(con, MessageType.Init, timeOffset);
         public static void PlaceBlock(this IConnection con, int layer, int x, int y, BlockId id, params object[] args) => SendL(con, MessageType.PlaceBlock, new object[] { layer, x, y, (int)id }.Concat(args).ToArray());
-        public static void PlaceBlock(this IConnection con, int layer, int x, int y, int id, params object[] args) => SendL(con, MessageType.PlaceBlock, new object[] { layer, x, y, id }.Concat(args).ToArray());
-        public static void PlaceBlock(this IConnection con, int l, int x, int y, Block block)
-        {
-            object[] args;
-            switch (block)
-            {
-                case Platform b:
-                    args = new object[] { b.Rotation };
-                    break;
-                case Switch b:
-                    if (!b.Inverted.HasValue) args = new object[] { b.Value };
-                    else args = new object[] { b.Value, b.Inverted.Value };
-                    break;
-                case Effect b:
-                    args = new object[] { b.Amount };
-                    break;
-                case Sign b:
-                    args = new object[] { b.Text, b.Morph };
-                    break;
-                case Portal b:
-                    args = new object[] { b.Rotation, b.ThisId, b.TargetId, b.Flipped };
-                    break;
-                case Block b:
-                    args = new object[0];
-                    break;
-                default:
-                    throw new InvalidOperationException();
-            }
-            PlaceBlock(con, l, x, y, block.Id, args);
-        }
+        public static void PlaceBlock(this IConnection con, int layer, int x, int y, int id, params object[] args) => SendL(con, MessageType.PlaceBlock, new object[] { layer, x, y, (int)id }.Concat(args).ToArray());
+        public static void PlaceBlock(this IConnection con, int layer, int x, int y, ushort id, params object[] args) => SendL(con, MessageType.PlaceBlock, new object[] { layer, x, y, (int)id }.Concat(args).ToArray());
+        public static void PlaceBlock(this IConnection con, int layer, int x, int y, Block block) => PlaceBlock(con, layer, x, y, block.Id, block.Data?.Serialize()?.ToArray() ?? new object[0]);
         public static void ChatRespond(this IConnection con, string username, string message, string prefix = null) => ChatPrefix(con, $"@{username}: {message}", prefix);
         public static void ChatPrefix(this IConnection con, string message, string prefix = null) => Chat(con, (prefix ?? GetChatPrefix(con)) + message);
         public static void Chat(this IConnection con, string message) => SendL(con, MessageType.Chat, message);
@@ -89,7 +62,7 @@ namespace EEUData
             var b = byte.Parse(parts[6].Remove(parts[6].Length - 1, 1));
             return (r << 16 | g << 8 | b);
         }
-        public static void SetBackgroundColor(this IConnection con, int rgb) => SetBackgroundColor(con, rgb.ToString("X6"));
+        public static void SetBackgroundColor(this IConnection con, int rgb) => SetBackgroundColor(con, (rgb & 0xFFFFFF).ToString("X6"));
         public static void SetBackgroundColor(this IConnection con, string hexcode) => con.Send(MessageType.Chat, "/bg " + hexcode);
         public static void Teleport(this IConnection con, string username, double x, double y) => SendL(con, MessageType.Chat, $"/tp {username} {x.ToString(c)} {y.ToString(c)}");
         public static void Teleport(this IConnection con, string username, int x, int y) => Teleport(con, username, (double)x, (double)y);
@@ -100,7 +73,7 @@ namespace EEUData
         public static void ResetSelf(this IConnection con) => Chat(con, "/reset");
         public static void Reset(this IConnection con, string username) => Chat(con, "/reset " + username);
         public static void ClearEffects(this IConnection con, string username) => Chat(con, $"/effect {username} clear");
-        public static void GiveEffect(this IConnection con, string username, EffectType effect, int config=1) => GiveEffect(con, username, (int)effect, config);
+        public static void GiveEffect(this IConnection con, string username, EffectType effect, int config = 1) => GiveEffect(con, username, (int)effect, config);
         public static void GiveEffect(this IConnection con, string username, int effect, int config = 1) => Chat(con, $"/effect {username} {effect} {config}");
 
         public enum WorldVisibility

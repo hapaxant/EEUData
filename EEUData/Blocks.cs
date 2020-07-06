@@ -223,9 +223,9 @@ namespace EEUData
             {
                 for (int x = 0; x < w; x++)
                 {
-                    b[0, x, y] = new Block(BlockId.Empty);
+                    //b[0, x, y] = new Block(BlockId.Empty, null);//unnecessary as we have structs now
                     b[1, x, y] = new Block(x == 1 && y == 1 ? BlockId.Spawn :
-                                          (y == 0 || y == (h - 1)) || (x == 0 || x == (w - 1)) ? BlockId.BasicGrey : BlockId.Empty);
+                                          (y == 0 || y == (h - 1)) || (x == 0 || x == (w - 1)) ? BlockId.BasicGrey : BlockId.Empty, null);
                 }
             }
             return b;
@@ -398,127 +398,163 @@ namespace EEUData
                     if (m[index++] is int iValue)
                         value = iValue;
 
-                    var backgroundId = value >> 16;
-                    var foregroundId = 65535 & value;
+                    var backgroundId = (ushort)(value >> 16);
+                    var foregroundId = (ushort)(65535 & value);
 
-                    blocks[0, x, y] = new Block(backgroundId);
-                    blocks[1, x, y] = HandleBlock(m, foregroundId, ref index);
+                    blocks[0, x, y] = new Block(backgroundId, null);
+                    blocks[1, x, y] = HandleBlock(foregroundId, m, ref index);
                 }
             return blocks;
         }
-        protected static Block HandleBlock(Message m)
+        public static Block HandleBlock(Message m)
         {
-            if (m.Type != MessageType.PlaceBlock) throw new ArgumentException("message not of type PlaceBlock");
-            int id = (int)m[4];
-            int index = 5;
-            var block = HandleBlock(m.Data, id, ref index);
-            block.PlayerId = (int)m[0];
-            return block;
-        }
-        internal protected static Block HandleBlock(List<object> m, int foregroundId, ref int index, bool returnBlocks = true)
-        {
-            switch (foregroundId)
+            switch (m.Type)
             {
-                case (int)BlockId.SignWood:
-                case (int)BlockId.SignRed:
-                case (int)BlockId.SignGreen:
-                case (int)BlockId.SignBlue:
+                case MessageType.PlaceBlock:
                     {
-                        string text = (string)m[index++];
-                        int morph = (int)m[index++];
-                        if (!returnBlocks) return null;
-                        return new Sign(foregroundId, text, morph);
+                        ushort id = (ushort)(int)m[4];
+                        int index = 5;
+                        var block = HandleBlock(id, m.Data, ref index);
+                        block.PlayerId = (int)m[0];
+                        return block;
                     }
-
-                case (int)BlockId.Portal:
-                    {
-                        int rotation = (int)m[index++];
-                        int p_id = (int)m[index++];
-                        int t_id = (int)m[index++];
-                        bool flip = (bool)m[index++];
-                        if (!returnBlocks) return null;
-                        return new Portal(foregroundId, rotation, p_id, t_id, flip);
-                    }
-
-                case (int)BlockId.EffectClear:
-                case (int)BlockId.EffectMultiJump:
-                case (int)BlockId.EffectHighJump:
-                    {
-                        int r = (foregroundId == (int)BlockId.EffectClear) ? 0 : (int)m[index++];
-                        if (!returnBlocks) return null;
-                        return new Effect(foregroundId, r);
-                    }
-
-                case (int)BlockId.SwitchLocal:
-                case (int)BlockId.SwitchLocalReset:
-                case (int)BlockId.SwitchGlobal:
-                case (int)BlockId.SwitchGlobalReset:
-                    {
-                        int c = (int)m[index++];
-                        if (!returnBlocks) return null;
-                        return new Switch(foregroundId, c);
-                    }
-                case (int)BlockId.SwitchGlobalDoor:
-                case (int)BlockId.SwitchLocalDoor:
-                case (int)BlockId.CoinGoldDoor:
-                case (int)BlockId.CoinBlueDoor:
-                    {
-                        int c = (int)m[index++];
-                        bool f = (bool)m[index++];
-                        if (!returnBlocks) return null;
-                        return new Switch(foregroundId, c, f);
-                    }
-
-                case (int)BlockId.Platform:
-                    {
-                        int r = (int)m[index++];
-                        if (!returnBlocks) return null;
-                        return new Platform(foregroundId, r);
-                    }
-
-                default:
-                    {
-                        if (!returnBlocks) return null;
-                        return new Block(foregroundId);
-                    }
+                default: throw new ArgumentException($"message type {m.Type} not supported");
             }
+        }
+        public static Block HandleBlock(ushort id, List<object> data, ref int index)
+        {
+            ExtraBlockData bd = null;
+            if (data != null)
+                switch (id)
+                {
+                    case (int)BlockId.SignWood:
+                    case (int)BlockId.SignRed:
+                    case (int)BlockId.SignGreen:
+                    case (int)BlockId.SignBlue:
+                        bd = SignBlockData.Deserialize(data, ref index);
+                        break;
+
+                    case (int)BlockId.Portal:
+                        bd = PortalBlockData.Deserialize(data, ref index);
+                        break;
+
+                    case (int)BlockId.EffectMultiJump:
+                    case (int)BlockId.EffectHighJump:
+                        bd = EffectBlockData.Deserialize(data, ref index);
+                        break;
+
+                    case (int)BlockId.SwitchLocal:
+                    case (int)BlockId.SwitchLocalReset:
+                    case (int)BlockId.SwitchGlobal:
+                    case (int)BlockId.SwitchGlobalReset:
+                        bd = SwitchBlockData.Deserialize(data, ref index, false);
+                        break;
+                    case (int)BlockId.SwitchGlobalDoor:
+                    case (int)BlockId.SwitchLocalDoor:
+                    case (int)BlockId.CoinGoldDoor:
+                    case (int)BlockId.CoinBlueDoor:
+                        bd = SwitchBlockData.Deserialize(data, ref index, true);
+                        break;
+
+                    case (int)BlockId.Platform:
+                        bd = PlatformBlockData.Deserialize(data, ref index);
+                        break;
+                }
+            return new Block(id, bd);
         }
     }
 
-    public class Block
+    public struct Block
     {
-        public Block(BlockId id, int playerId = 0) : this((int)id, playerId) { }
-        public Block(int id, int playerId = 0)
+        public Block(int id = 0, int playerId = 0) : this((ushort)id, playerId, null) { }
+        public Block(int id = 0, ExtraBlockData data = null) : this((ushort)id, 0, data) { }
+        public Block(int id = 0, int playerId = 0, ExtraBlockData data = null) : this((ushort)id, playerId, data) { }
+        public Block(BlockId id = 0, int playerId = 0) : this((ushort)id, playerId, null) { }
+        public Block(ushort id = 0, int playerId = 0) : this(id, playerId, null) { }
+        public Block(BlockId id = 0, ExtraBlockData data = null) : this((ushort)id, 0, data) { }
+        public Block(ushort id = 0, ExtraBlockData data = null) : this(id, 0, data) { }
+        public Block(BlockId id = 0, int playerId = 0, ExtraBlockData data = null) : this((ushort)id, playerId, data) { }
+        public Block(ushort id = 0, int playerId = 0, ExtraBlockData data = null)
         {
             this.Id = id;
             this.PlayerId = playerId;
+            this.Data = data;
+        }
+        public Block(List<object> data, ref int index, int playerId = 0)
+        {
+            var block = Deserialize(data, ref index);
+            this.Id = block.Id;
+            this.PlayerId = playerId;
+            this.Data = block.Data;
         }
 
         /// <summary>
         /// Id of block
         /// </summary>
-        public int Id { get; set; }
+        public ushort Id { get; set; }
         /// <summary>
-        /// Player ID of whoever placed block. 0 if unknown
+        /// Player ID of whoever placed block. 0 if unknown.
         /// </summary>
         public int PlayerId { get; set; }
+        /// <summary>
+        /// Extra block data for switches, portals etc. null for regular blocks
+        /// </summary>
+        public ExtraBlockData Data { get; set; }
 
-        public override string ToString() => $"[{nameof(Id)}:({Id}:{((BlockId)Id)}), {nameof(PlayerId)}:{PlayerId}]";
+        public List<object> Serialize()
+        {
+            var list = new List<object>();
+            list.Add(Id);
+            if (Data != null) list.AddRange(Data.Serialize());
+            return list;
+        }
+        public static Block Deserialize(List<object> data, ref int index)
+        {
+            var block = new Block();
+
+            var id = data[index++];
+            if (id is int idint) block.Id = (ushort)idint;
+            else if (id is ushort idushort) block.Id = idushort;
+            else throw new ArgumentException($"unable to deserialize block id (type is {id.GetType()})");
+
+            return WorldData.HandleBlock(block.Id, data, ref index);
+        }
+
+        /// <summary>
+        /// converts this block instance to human readable format.
+        /// </summary>
+        public override string ToString() => $"[{nameof(Id)}:({Id}:{((BlockId)Id)}), {nameof(PlayerId)}:{PlayerId}{(Data != null ? ", " + Data.ToString() : "")}]";
     }
-    public class Sign : Block
+    public abstract class ExtraBlockData
     {
-        public Sign(BlockId blockId = BlockId.SignWood, string text = "", int morph = 0, int playerId = 0) : this((int)blockId, text, morph, playerId) { }
-        public Sign(int blockId = (int)BlockId.SignWood, string text = "", int morph = 0, int playerId = 0) : base(blockId, playerId) { this.Text = text; this.Morph = morph; }
+        public abstract List<object> Serialize();
+        /// <summary>
+        /// converts this block data to human readable format.
+        /// </summary>
+        public abstract override string ToString();
+    }
+    public interface IMorphable { int Morph { get; set; } }
+    public interface IFlippable { bool Flipped { get; set; } }
+    public class SignBlockData : ExtraBlockData, IMorphable
+    {
+        public SignBlockData(string text = null, int morph = 0)
+        {
+            this.Text = text;
+            this.Morph = morph;
+        }
 
         public string Text { get; set; }
         public int Morph { get; set; }
+        int IMorphable.Morph { get => Morph; set => Morph = value; }
 
-        public override string ToString() => $"{base.ToString().TrimEnd(']')}, {nameof(Morph)}:{Morph}, {nameof(Text)}:{Text}]";
+        public override List<object> Serialize() => new List<object>() { Text, Morph };
+        public static SignBlockData Deserialize(List<object> data, ref int index) => new SignBlockData((string)data[index++], (int)data[index++]);
+
+        public override string ToString() => $"{nameof(Text)}:\"{Text.Replace("\"","\\\"")}\", {nameof(Morph)}:{Morph}";
     }
-    public class Portal : Block
+    public class PortalBlockData : ExtraBlockData, IMorphable, IFlippable
     {
-        public Portal(BlockId blockId = BlockId.Portal, int rotation = 0, int thisId = 0, int targetId = 0, bool flipped = false, int playerId = 0) : this((int)blockId, rotation, thisId, targetId, flipped, playerId) { }
-        public Portal(int blockId = (int)BlockId.Portal, int rotation = 0, int thisId = 0, int targetId = 0, bool flipped = false, int playerId = 0) : base(BlockId.Portal, playerId)
+        public PortalBlockData(int rotation = 0, int thisId = 0, int targetId = 0, bool flipped = false)
         {
             this.Rotation = rotation;
             this.ThisId = thisId;
@@ -527,47 +563,60 @@ namespace EEUData
         }
 
         public int Rotation { get; set; }
+        int IMorphable.Morph { get => Rotation; set => Rotation = value; }
         public int ThisId { get; set; }
         public int TargetId { get; set; }
         public bool Flipped { get; set; }
+        bool IFlippable.Flipped { get => Flipped; set => Flipped = value; }
 
-        public override string ToString() => $"{base.ToString().TrimEnd(']')}, {nameof(Rotation)}:{Rotation}, {nameof(ThisId)}:{ThisId}, {nameof(TargetId)}:{TargetId}, {nameof(Flipped)}:{Flipped}]";
+        public override List<object> Serialize() => new List<object>() { Rotation, ThisId, TargetId, Flipped };
+        public static PortalBlockData Deserialize(List<object> data, ref int index) => new PortalBlockData((int)data[index++], (int)data[index++], (int)data[index++], (bool)data[index++]);
+
+        public override string ToString() => $"{nameof(Rotation)}:{Rotation}, {nameof(ThisId)}:{ThisId}, {nameof(TargetId)}:{TargetId}, {nameof(Flipped)}:{Flipped}";
     }
-    public class Effect : Block
+    public class EffectBlockData : ExtraBlockData, IMorphable
     {
-        public Effect(BlockId blockId = BlockId.EffectClear, int amount = 0, int playerId = 0) : base(blockId, playerId) => this.Amount = amount;
-        public Effect(int blockId = (int)BlockId.EffectClear, int amount = 0, int playerId = 0) : base(blockId, playerId) => this.Amount = amount;
+        public EffectBlockData(int value = 0) => this.Value = value;
 
-        public int Amount { get; set; }
+        public int Value { get; set; }
+        int IMorphable.Morph { get => Value; set => Value = value; }
 
-        public override string ToString() => $"{base.ToString().TrimEnd(']')}, {nameof(Amount)}:{Amount}]";
+        public override List<object> Serialize() => new List<object>() { Value };
+        public static EffectBlockData Deserialize(List<object> data, ref int index) => new EffectBlockData((int)data[index++]);
+
+        public override string ToString() => $"{nameof(Value)}:{Value}";
     }
-    public class Switch : Block
+    public class SwitchBlockData : ExtraBlockData, IMorphable, IFlippable
     {
-        public Switch(BlockId blockId = BlockId.SwitchLocal, int value = 0, bool? inverted = null, int playerId = 0) : this((int)blockId, value, inverted, playerId) { }
-        public Switch(int blockId = (int)BlockId.SwitchLocal, int value = 0, bool? inverted = null, int playerId = 0) : base(blockId, playerId)
+        public SwitchBlockData(int value = 0, bool? inverted = null)
         {
             this.Value = value;
             this.Inverted = inverted;
         }
 
-        /// <summary>
-        /// channel for local/global switches, count for coin doors
-        /// </summary>
         public int Value { get; set; }
+        int IMorphable.Morph { get => Value; set => Value = value; }
         /// <summary>
-        /// null for non-doors<para/>
-        /// haha tristate go brrrrrrr
+        /// null for non-doors
         /// </summary>
         public bool? Inverted { get; set; }
+        bool IFlippable.Flipped { get => Inverted ?? throw new NullReferenceException($"{nameof(Inverted)} is null."); set => Inverted = value; }
 
-        public override string ToString() => $"{base.ToString().TrimEnd(']')}, {nameof(Value)}:{Value}, {nameof(Inverted)}:{Inverted}]";
+        public override List<object> Serialize() => Inverted.HasValue ? new List<object>() { Value, Inverted.Value } : new List<object>() { Value };
+        public static SwitchBlockData Deserialize(List<object> data, ref int index, bool isDoor) => new SwitchBlockData((int)data[index++], isDoor ? (bool)data[index++] : null as bool?);
+
+        public override string ToString() => $"{nameof(Value)}:{Value}{(Inverted.HasValue ? $", {nameof(Inverted)}:{Inverted}" : "")}";
     }
-    public class Platform : Block
+    public class PlatformBlockData : ExtraBlockData, IMorphable
     {
-        public Platform(BlockId blockId = BlockId.Platform, int rotation = 0, int playerId = 0) : this((int)blockId, rotation, playerId) { }
-        public Platform(int blockId = (int)BlockId.Platform, int rotation = 0, int playerId = 0) : base(blockId, playerId) => this.Rotation = rotation;
+        public PlatformBlockData(int rotation = 0) => this.Rotation = rotation;
 
         public int Rotation { get; set; }
+        int IMorphable.Morph { get => Rotation; set => Rotation = value; }
+
+        public override List<object> Serialize() => new List<object>() { Rotation };
+        public static PlatformBlockData Deserialize(List<object> data, ref int index) => new PlatformBlockData((int)data[index++]);
+
+        public override string ToString() => $"{nameof(Rotation)}:{Rotation}";
     }
 }

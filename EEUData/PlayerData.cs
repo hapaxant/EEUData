@@ -129,7 +129,7 @@ namespace EEUData
                         value = iValue;
 
                     var foregroundId = 65535 & value;
-                    WorldData.HandleBlock(m.Data, foregroundId, ref index, false);
+                    WorldData.HandleBlock((ushort)foregroundId, m.Data, ref index);
                 }
             this.TimeOffset = m.GetDouble(index++);
             var canEdit = m.GetBool(index++);
