@@ -223,9 +223,7 @@ namespace EEUData
             {
                 for (int x = 0; x < w; x++)
                 {
-                    //b[0, x, y] = new Block(BlockId.Empty, null);//unnecessary as we have structs now
-                    b[1, x, y] = new Block(x == 1 && y == 1 ? BlockId.Spawn :
-                                          (y == 0 || y == (h - 1)) || (x == 0 || x == (w - 1)) ? BlockId.BasicGrey : BlockId.Empty, null);
+                    b[1, x, y] = new Block((y == 0 || y == (h - 1)) || (x == 0 || x == (w - 1)) ? BlockId.BasicGrey : BlockId.Empty);
                 }
             }
             return b;
