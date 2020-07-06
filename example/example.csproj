@@ -61,10 +61,6 @@
       <Project>{0c6d7e80-939a-4d2b-8a11-1a9c331a51a4}</Project>
       <Name>EEUniverse.Library</Name>
     </ProjectReference>
-    <ProjectReference Include="..\EEWExtension\EEWData.csproj">
-      <Project>{aea3c7c8-b84b-4c47-8c23-3fe9e52ebcaf}</Project>
-      <Name>EEWData</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
