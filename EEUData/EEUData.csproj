@@ -42,7 +42,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Blocks.cs" />
-    <Compile Include="ConnectionExtensions.cs" />
+    <Compile Include="EEUClient.cs" />
+    <Compile Include="EEUConnection.cs" />
+    <Compile Include="EEULobby.cs" />
     <Compile Include="PlayerData.cs" />
     <Compile Include="WorldData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
