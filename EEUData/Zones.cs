@@ -24,9 +24,11 @@ namespace EEUData
 
         public bool[,] Map { get; set; }
     }
-    public partial class WorldData
+    public partial class RoomData
     {
-        public ConcurrentDictionary<int, Zone> Zones { get; protected set; }
+
+        protected internal Dictionary<int, Zone> _zones;
+        public IReadOnlyDictionary<int, Zone> Zones { get => _zones; }
         public static Dictionary<int, Zone> DeserializeZoneData(List<object> m, int width, int height, ref int index)
         {
             var zones = new Dictionary<int, Zone>();

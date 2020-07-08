@@ -144,7 +144,7 @@ namespace EEUData
         #endregion
     }
 
-    public partial class WorldData
+    public partial class RoomData
     {
         public Block this[int l, int x, int y]
         {
@@ -154,12 +154,12 @@ namespace EEUData
 
         public Block[,,] Blocks { get; protected set; }
 
-        public static int GetARGBColor(ushort fg = (ushort)BlockId.Black, ushort bg = (ushort)BlockId.Black, int backgroundColor = -1) => WorldData.FromARGBToBlockColor(GetARGBColor(fg, bg, backgroundColor));
+        public static int GetARGBColor(ushort fg = (ushort)BlockId.Black, ushort bg = (ushort)BlockId.Black, int backgroundColor = -1) => FromARGBToBlockColor(GetARGBColor(fg, bg, backgroundColor));
         public static int GetBlockColor(ushort fg = (ushort)BlockId.Black, ushort bg = (ushort)BlockId.Black, int backgroundColor = -1)
         {
             unchecked
             {
-                var ct = WorldData.BlockColors;
+                var ct = BlockColors;
                 const int BLACK = 0;
                 const int TRANSPARENT = -2;
                 int c = BLACK;
@@ -170,46 +170,20 @@ namespace EEUData
                 if (n == -1) c = backgroundColor != -1 ? backgroundColor : BLACK;
                 if (n >= 0) c = n;
                 return c;
-                //var ct = WorldData.BlockColors;
-                //const int BLACK = (int)0xff000000;
-                //const int TRANSPARENT = 0;
-                //int c = BLACK;
-                //int n = ct[fg];
-                //if (n == -1) n = ct[bg];
-                //if (n == -1) n = backgroundColor;
-                //if (n == -1) c = BLACK;
-                //if (n == -2) c = TRANSPARENT;
-                //if (n >= 0) c = n;
-                //return c;
-
-                //var ct = WorldData.BlockColors;
-                //const int BLACK = (int)0xff000000;
-                //const int TRANSPARENT = 0;
-                //int c = BLACK;
-                //int n = ct[fg];
-                //if (n == -1) n = ct[bg];
-                //if (n == -1 && bg != 0) n = -2;
-                //if (n == -2) c = TRANSPARENT;
-                //if (n == -1) c = backgroundColor != -1 ? (BLACK | backgroundColor) : BLACK;
-                //if (n >= 0) c = n;
-                //return c;
             }
         }
         public virtual int GetARGBColor(int x, int y, int layer = -1, int backgroundColor = -2) => GetBlockColor(x, y, layer, backgroundColor);
         public virtual int GetBlockColor(int x, int y, int layer = -1, int backgroundColor = -2)
         {
-            if (backgroundColor == -2) backgroundColor = this.BackgroundColor;//i think -2 can be an actual color in the world? but i really doubt that's going to be a problem
+            if (backgroundColor == -2) backgroundColor = this.BackgroundColor;
             if (layer < -1 && layer > 1) throw new ArgumentOutOfRangeException(nameof(layer));
-            //var fg = (ushort)this.Blocks[1, x, y].Id;
-            //var bg = (ushort)this.Blocks[0, x, y].Id;
-            //var empty = (ushort)BlockId.Empty;
-            //return WorldData.GetBlockColor(layer == -1 || layer == 1 ? fg : empty, layer == -1 || layer == 0 ? bg : empty, backgroundColor);
             if (layer == -1)
-                return WorldData.GetBlockColor((ushort)this.Blocks[1, x, y].Id, (ushort)this.Blocks[0, x, y].Id, backgroundColor);
+                return GetBlockColor((ushort)this.Blocks[1, x, y].Id, (ushort)this.Blocks[0, x, y].Id, backgroundColor);
             else if (layer == 0)
-                return WorldData.GetBlockColor((ushort)BlockId.Empty, (ushort)this.Blocks[0, x, y].Id, backgroundColor);
-            else //if (layer == 1)
-                return WorldData.GetBlockColor((ushort)this.Blocks[1, x, y].Id, (ushort)BlockId.Empty, backgroundColor);
+                return GetBlockColor((ushort)BlockId.Empty, (ushort)this.Blocks[0, x, y].Id, backgroundColor);
+            else if (layer == 1)
+                return GetBlockColor((ushort)this.Blocks[1, x, y].Id, (ushort)BlockId.Empty, backgroundColor);
+            else throw new ArgumentOutOfRangeException(nameof(layer));
         }
 
         protected internal virtual void HandleClear() => Blocks = GetClearedWorld(Width, Height, 2);
@@ -234,7 +208,7 @@ namespace EEUData
         /// -2 = invisible like black block
         /// -1 = transparent like coin
         /// </summary>
-        public static readonly Dictionary<ushort, int> BlockColors = new Dictionary<ushort, int>()
+        public static readonly IReadOnlyDictionary<ushort, int> BlockColors = new Dictionary<ushort, int>()
         {
             //gravity
             { (ushort)BlockId.Empty, -1 },
@@ -521,7 +495,7 @@ namespace EEUData
             return list;
         }
         public static Block Deserialize(int id, List<object> data, ref int index) => Deserialize((ushort)id, data, ref index);
-        public static Block Deserialize(ushort id, List<object> data, ref int index) => WorldData.HandleBlock(id, data, ref index);
+        public static Block Deserialize(ushort id, List<object> data, ref int index) => RoomData.HandleBlock(id, data, ref index);
         /// <summary>
         /// this reads the block id from data.
         /// </summary>
