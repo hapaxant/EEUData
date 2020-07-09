@@ -144,6 +144,12 @@ namespace EEUData
         #endregion
     }
 
+    public static partial class Extensions
+    {
+        public static bool IsBackground(this BlockId bid) => bid.ToString().StartsWith("Bg");
+        public static bool IsForeground(this BlockId bid) => !IsBackground(bid);
+    }
+
     public partial class RoomData
     {
         public Block this[int l, int x, int y]
