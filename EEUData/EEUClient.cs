@@ -16,10 +16,8 @@ namespace EEUData
             _token = token;
         }
 
-        private readonly Client _client;
         private readonly ManualResetEventSlim _gotSelfInfo = new ManualResetEventSlim(false, 0);
         private const int _timeout = 5000;
-
         private SelfInfo _selfInfo;
         public SelfInfo SelfInfo { get { if (_gotSelfInfo.Wait(_timeout)) return _selfInfo; throw new TimeoutException("Server did not send SelfInfo yet"); } protected set => _selfInfo = value; }
 

@@ -19,6 +19,15 @@ namespace EEUData
         public void Init() => Init(0);
         public void Init(int timeOffset) => SendL(MessageType.Init, timeOffset);
         public void Ping() => SendL(MessageType.Ping);
+        /// <summary>
+        /// gets ping in milliseconds.
+        /// </summary>
+        public int GetPing()
+        {
+            var s = System.Diagnostics.Stopwatch.StartNew();
+            _client.ReceiveMessage(new Message(ConnectionScope.World, MessageType.Ping), (m) => m.Type == MessageType.Pong);
+            return (int)s.ElapsedMilliseconds;
+        }
         public void ChangeSmiley(SmileyType id) => ChangeSmiley((int)id);
         public void ChangeSmiley(int id) => SendL(MessageType.PlayerSmiley, id);
         public void ToggleGod() => SendL(MessageType.PlayerGod);
@@ -101,7 +110,7 @@ namespace EEUData
 
         private readonly object _sendLock = new object();
         public bool UseLocking { get; set; } = false;
-        public bool UseAsync { get; set; } = true;
+        public bool UseAsync { get; set; } = false;
         public void SendL(MessageType type, params object[] args)
         {
             if (UseAsync)
