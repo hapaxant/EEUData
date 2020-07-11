@@ -35,9 +35,9 @@ namespace EEUniverse.Library
             }
         }
 
-        public void Send(MessageType type, params object[] data) => SendAsync(new Message(_scope, type, data)).GetAwaiter().GetResult();
-        public void Send(Message message) => SendAsync(message).ConfigureAwait(false).GetAwaiter().GetResult();
-        public Task SendAsync(MessageType type, params object[] data) => _client.SendAsync(_scope, type, data);
-        public Task SendAsync(Message message) => _client.SendAsync(message);
+        public void Send(MessageType type, params object[] data) => _client.Send(_scope, type, data);
+        public void Send(Message message) => _client.Send(message);
+        public Task<bool> SendAsync(MessageType type, params object[] data) => _client.SendAsync(_scope, type, data);
+        public Task<bool> SendAsync(Message message) => _client.SendAsync(message);
     }
 }

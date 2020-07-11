@@ -28,12 +28,12 @@ namespace EEUniverse.Library
         /// </summary>
         /// <param name="type">The type of the message.</param>
         /// <param name="data">An array of data to be sent.</param>
-        Task SendAsync(MessageType type, params object[] data);
+        Task<bool> SendAsync(MessageType type, params object[] data);
 
         /// <summary>
         /// Sends an asynchronous message to the server.
         /// </summary>
         /// <param name="message">The message to be sent.</param>
-        Task SendAsync(Message message);
+        Task<bool> SendAsync(Message message);
     }
 }

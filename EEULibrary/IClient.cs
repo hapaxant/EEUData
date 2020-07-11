@@ -55,13 +55,13 @@ namespace EEUniverse.Library
         /// <param name="scope">The scope of the message.</param>
         /// <param name="type">The type of the message.</param>
         /// <param name="data">An array of data to be sent.</param>
-        Task SendAsync(ConnectionScope scope, MessageType type, params object[] data);// => SendAsync(new Message(scope, type, data));
+        Task<bool> SendAsync(ConnectionScope scope, MessageType type, params object[] data);// => SendAsync(new Message(scope, type, data));
 
         /// <summary>
         /// Sends a message to the server as an asynchronous operation.
         /// </summary>
         /// <param name="message">The message to send.</param>
-        Task SendAsync(Message message);
+        Task<bool> SendAsync(Message message);
 
         /// <summary>
         /// Creates a connection with the lobby.

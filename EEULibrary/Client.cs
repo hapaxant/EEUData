@@ -74,11 +74,11 @@ namespace EEUniverse.Library
             OnMessage = null;
         }
 
-        public virtual void Send(ConnectionScope scope, MessageType type, params object[] data) => SendAsync(new Message(scope, type, data)).ConfigureAwait(false).GetAwaiter().GetResult();
-        public virtual Task SendAsync(ConnectionScope scope, MessageType type, params object[] data) => SendAsync(new Message(scope, type, data));
-        public virtual void Send(Message message) => SendAsync(message).ConfigureAwait(false).GetAwaiter().GetResult();
-        public virtual Task SendAsync(Message message) => SendRawAsync(Serializer.Serialize(message));
-        public virtual void SendRaw(ArraySegment<byte> bytes) => SendRawAsync(bytes.Array).ConfigureAwait(false).GetAwaiter().GetResult();
+        public virtual void Send(ConnectionScope scope, MessageType type, params object[] data) => Send(new Message(scope, type, data));
+        public virtual void Send(Message message) => SendRaw(Serializer.Serialize(message));
+        public virtual void SendRaw(byte[] bytes) => Socket.Send(bytes);
+        public virtual Task<bool> SendAsync(ConnectionScope scope, MessageType type, params object[] data) => SendAsync(new Message(scope, type, data));
+        public virtual Task<bool> SendAsync(Message message) => SendRawAsync(Serializer.Serialize(message));
         public virtual Task<bool> SendRawAsync(byte[] bytes)
         {
             var tcs = new TaskCompletionSource<bool>();
