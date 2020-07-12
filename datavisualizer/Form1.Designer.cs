@@ -30,12 +30,12 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.panel1 = new System.Windows.Forms.Panel();
+            this.pictureBox1 = new datavisualizer.PictureBoxWithInterpolationMode();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.button1 = new System.Windows.Forms.Button();
             this.listBox1 = new System.Windows.Forms.ListBox();
             this.panel2 = new System.Windows.Forms.Panel();
             this.pictureBoxWithInterpolationMode1 = new datavisualizer.PictureBoxWithInterpolationMode();
-            this.pictureBox1 = new datavisualizer.PictureBoxWithInterpolationMode();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
@@ -46,10 +46,11 @@
             this.pictureBoxRight = new System.Windows.Forms.PictureBox();
             this.pictureBoxSpace = new System.Windows.Forms.PictureBox();
             this.label4 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
             this.panel1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxWithInterpolationMode1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxUp)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxDown)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxLeft)).BeginInit();
@@ -65,6 +66,18 @@
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(300, 300);
             this.panel1.TabIndex = 0;
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.BackColor = System.Drawing.Color.Fuchsia;
+            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pictureBox1.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+            this.pictureBox1.Location = new System.Drawing.Point(0, 0);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(300, 300);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pictureBox1.TabIndex = 0;
+            this.pictureBox1.TabStop = false;
             // 
             // textBox1
             // 
@@ -108,21 +121,9 @@
             this.pictureBoxWithInterpolationMode1.Location = new System.Drawing.Point(0, 0);
             this.pictureBoxWithInterpolationMode1.Name = "pictureBoxWithInterpolationMode1";
             this.pictureBoxWithInterpolationMode1.Size = new System.Drawing.Size(300, 300);
-            this.pictureBoxWithInterpolationMode1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
+            this.pictureBoxWithInterpolationMode1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBoxWithInterpolationMode1.TabIndex = 4;
             this.pictureBoxWithInterpolationMode1.TabStop = false;
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.BackColor = System.Drawing.Color.Fuchsia;
-            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pictureBox1.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-            this.pictureBox1.Location = new System.Drawing.Point(0, 0);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(300, 300);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureBox1.TabIndex = 0;
-            this.pictureBox1.TabStop = false;
             // 
             // label1
             // 
@@ -210,15 +211,24 @@
             this.label4.AutoSize = true;
             this.label4.Location = new System.Drawing.Point(739, 266);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(35, 13);
+            this.label4.Size = new System.Drawing.Size(0, 13);
             this.label4.TabIndex = 9;
-            this.label4.Text = "label4";
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(255, 334);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(207, 13);
+            this.label5.TabIndex = 10;
+            this.label5.Text = "copy token to clipboard before connecting";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(868, 356);
+            this.Controls.Add(this.label5);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.pictureBoxSpace);
             this.Controls.Add(this.pictureBoxRight);
@@ -240,10 +250,9 @@
             this.TransparencyKey = System.Drawing.Color.Fuchsia;
             this.Load += new System.EventHandler(this.Form1_Load);
             this.panel1.ResumeLayout(false);
-            this.panel2.ResumeLayout(false);
-            this.panel2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxWithInterpolationMode1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            this.panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxWithInterpolationMode1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxUp)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxDown)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxLeft)).EndInit();
@@ -273,6 +282,7 @@
         private System.Windows.Forms.PictureBox pictureBoxRight;
         private System.Windows.Forms.PictureBox pictureBoxSpace;
         private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label label5;
     }
 }
 

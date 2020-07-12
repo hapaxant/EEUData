@@ -9,13 +9,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using EEUniverse.Library;
 using EEUData;
-using EEWData;
-using WorldData = EEWData.WorldData;
-using PlayerData = EEWData.PlayerData;
-//using BlockId = EEWData.BlockId;
 using System.IO;
-using System.Diagnostics;
-using Message = EEUniverse.Library.Message;
+using Message = EEUniverse.Library.Message;//Message type conflicts with System.Windows.Forms.Message
 using System.Drawing.Drawing2D;
 
 namespace datavisualizer
@@ -27,21 +22,16 @@ namespace datavisualizer
             InitializeComponent();
         }
 
-        EEWClient cli;
-        Connection con;
-        const string TOKENPATH = "token.txt";
-        string GetToken(bool forcenew)
-        {
-            if (!File.Exists(TOKENPATH) || forcenew)
-            {
-                File.WriteAllText(TOKENPATH, "");
-                Process.Start("notepad.exe", TOKENPATH).WaitForExit();
-            }
-            return File.ReadAllText(TOKENPATH);
-        }
+        EEUClient cli;
+        EEUConnection con;
+        RoomData data;
+        Graphics g;
+        Bitmap b;
+
         private void Form1_Load(object sender, EventArgs e)
         {
             if (File.Exists(WIDPATH)) textBox1.Text = File.ReadAllText(WIDPATH);
+            if (string.IsNullOrWhiteSpace(textBox1.Text)) textBox1.Text = "WorldID";
         }
 
         const string WIDPATH = "wid.txt";
@@ -50,7 +40,7 @@ namespace datavisualizer
             if (button1.Text == "disconnect")
             {
                 button1.Enabled = false;
-                playersd.Clear();
+                players.Clear();
                 zones.Clear();
                 listBox1.Items.Clear();
                 listBox2.Items.Clear();
@@ -68,84 +58,55 @@ namespace datavisualizer
             button1.Enabled = false;
             var wid = textBox1.Text;
             File.WriteAllText(WIDPATH, wid);
-            void tryConnect(bool shid)
-            {
-                cli = new EEWClient(GetToken(shid));
-                cli.Connect();
-                //var t = cli.ConnectAsync();
-                //while (!t.IsCompleted) Task.Delay(1).Wait();
-                //var exx = t.Exception;
-                //if (exx != null) throw exx;
-            }
             try
             {
-                tryConnect(false);
+                cli = new EEUClient(Clipboard.GetText());
+                cli.Connect();
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.ToString());
-                tryConnect(true);
+                button1.Enabled = true;
+                return;
             }
-            world = new WorldData();
-            players = new PlayerData();
+            data = new RoomData();
             cli.OnDisconnect += delegate (object o, CloseEventArgs ee) { MessageBox.Show(ee.ToString(), "OnDisconnect", MessageBoxButtons.OK, MessageBoxIcon.Error); };
-            con = (Connection)cli.CreateWorldConnection(wid);
+            con = cli.CreateWorldConnection(wid);
             con.OnMessage += OnMessage;
-            Task.Delay(500).Wait();
-            con.Send(MessageType.Init, 0);
+            con.Init();
             button1.Text = "disconnect";
             button1.Enabled = true;
         }
 
-        WorldData world;
-        PlayerData players;
-        Graphics g;
-        Bitmap b;
-
-        //Color GetColor(int fg, int bg) => GetColor((ushort)fg, (ushort)bg);
-        //Color GetColor(ushort fg, ushort bg)
-        //{
-        //    var ct = WorldData.BlockColors;
-        //    Color c = Color.Black;
-        //    int n = ct[fg];
-        //    if (n == -1) n = ct[bg];
-        //    if (n == -1 && bg != 0) n = -2;
-        //    if (n == -2) c = Color.Transparent;
-        //    var wbg = world.BackgroundColor;
-        //    if (n == -1) c = wbg != -1 ? Color.FromArgb(unchecked((int)0xff000000 | world.BackgroundColor)) : Color.Black;
-        //    if (n >= 0) c = Color.FromArgb(WorldData.FromBlockColorToArgb(n));
-        //    return c;
-        //}
-        Color GetColor(int fg, int bg) => Color.FromArgb(WorldData.GetARGBColor((ushort)fg, (ushort)bg));
+        Color GetColor(int fg, int bg, int bgcolor) => Color.FromArgb(RoomData.GetARGBColor((ushort)fg, (ushort)bg, bgcolor));
+        int bgcolor;
         void ReloadPicturebox()
         {
-            int w = world.Width, h = world.Height;
+            int w = data.Width, h = data.Height;
             pictureBox1.Invoke((Action)delegate ()
             {
                 b?.Dispose();
                 g?.Dispose();
                 pictureBox1.Image = b = new Bitmap(w, h);
-                //g = pictureBox1.CreateGraphics();
                 g = Graphics.FromImage(b);
                 g.Clear(Color.Black);
-                for (int y = 0; y < world.Height; y++)
+                for (int y = 0; y < h; y++)
                 {
-                    for (int x = 0; x < world.Width; x++)
+                    for (int x = 0; x < w; x++)
                     {
-                        var n = (int)world[1, x, y].Id;
-                        var n2 = (int)world[0, x, y].Id;
-                        b.SetPixel(x, y, GetColor(n, n2));
+                        var n = (int)data.Blocks[1, x, y].Id;
+                        var n2 = (int)data.Blocks[0, x, y].Id;
+                        b.SetPixel(x, y, GetColor(n, n2, bgcolor));
                     }
                 }
                 pictureBox1.Invalidate();
             });
         }
-        Dictionary<int, player> playersd = new Dictionary<int, player>();
-        Dictionary<int, zone> zones = new Dictionary<int, zone>();
-#pragma warning disable IDE1006 // Naming Styles // idgaf
-        class player
+        Dictionary<int, MyPlayer> players = new Dictionary<int, MyPlayer>();
+        Dictionary<int, MyZone> zones = new Dictionary<int, MyZone>();
+        class MyPlayer
         {
-            public player(int id, string name) { this.id = id; this.name = name; }
+            public MyPlayer(int id, string name) { this.id = id; this.name = name; }
             public int id;
             public string name;
             public override string ToString()
@@ -153,12 +114,12 @@ namespace datavisualizer
                 return $"{id} {name}";
             }
         }
-        class zone
+        class MyZone
         {
-            public zone(int id, int type)
+            public MyZone(int id, int type)
             {
                 this.id = id;
-                this.name = $"{id} {((EEUData.ZoneType)type).ToString()}";
+                this.name = $"{id} {((ZoneType)type).ToString()}";
             }
             public int id;
             public string name;
@@ -167,26 +128,24 @@ namespace datavisualizer
                 return $"{name}";
             }
         }
-#pragma warning restore IDE1006 // Naming Styles
         private void OnMessage(object sender, Message m)
         {
             Console.WriteLine(m.Type);
-            world.Parse(m);
-            players.Parse(m);
+            data.Parse(m);
             switch (m.Type)
             {
                 case MessageType.Init:
+                    bgcolor = data.BackgroundColor;
                     ReloadPicturebox();
                     listBox1.Invoke((Action)delegate ()
                     {
                         listBox1.Items.Clear();
                         zones.Clear();
-                        pictureBoxWithInterpolationMode1.Image = b2 = new Bitmap(world.Width, world.Height);
+                        pictureBoxWithInterpolationMode1.Image = b2 = new Bitmap(data.Width, data.Height);
                         g2 = Graphics.FromImage(b2);
-                        //g2 = pictureBoxWithInterpolationMode1.CreateGraphics();
-                        foreach (var item in world.Zones.Values)
+                        foreach (var item in data.Zones.Values)
                         {
-                            var z = new zone(item.Id, (int)item.Type);
+                            var z = new MyZone(item.Id, (int)item.Type);
                             zones.Add(item.Id, z);
                             listBox1.Items.Add(z);
                         }
@@ -194,21 +153,18 @@ namespace datavisualizer
                     DrawZone(-1);
                     break;
                 case MessageType.ZoneEdit:
-                    //DrawZone(m.GetInt(0));
                     DrawZone(-1);
                     break;
                 case MessageType.ZoneCreate:
                     {
-                        //listBox1.Items.Add($"{m.GetInt(1)==0? WorldData.ZoneType}");
                         int id = -1;
                         listBox1.Invoke((Action)delegate ()
                         {
                             id = m.GetInt(0);
-                            var z = new zone(id, m.GetInt(1));
+                            var z = new MyZone(id, m.GetInt(1));
                             zones.Add(id, z);
                             listBox1.Items.Add(z);
                         });
-                        //DrawZone(id);
                         DrawZone(-1);
                         break;
                     }
@@ -225,39 +181,20 @@ namespace datavisualizer
                         break;
                     }
                 case MessageType.PlaceBlock:
-                    /*[0] = 2 (Int32)//playerid
-                      [1] = 1 (Int32)//layer
-                      [2] = 47 (Int32)//x
-                      [3] = 168 (Int32)//y
-                      [4] = 5 (Int32)*///id
                     this.Invoke((Action)delegate ()
                     {
                         int l = m.GetInt(1), x = m.GetInt(2), y = m.GetInt(3), id = m.GetInt(4);
-                        if (l == 0) b.SetPixel(x, y, GetColor((int)world[1, x, y].Id, id));
-                        else b.SetPixel(x, y, GetColor(id, (int)world[0, x, y].Id));
-                        //pictureBox1.Invalidate(new Rectangle(x, y, 1, 1));
+                        if (l == 0) b.SetPixel(x, y, GetColor((int)data.Blocks[1, x, y].Id, id, bgcolor));
+                        else b.SetPixel(x, y, GetColor(id, (int)data.Blocks[0, x, y].Id, bgcolor));
                         pictureBox1.Invalidate();
                     });
                     break;
                 case MessageType.BgColor:
+                    bgcolor = m.GetInt(0);
                     ReloadPicturebox();
-                    break;
-                case (MessageType)CustomMessageType.Loadlevel:
-                    ReloadPicturebox();
-                    listBox1.Invoke((Action)delegate ()
-                    {
-                        listBox1.Items.Clear();
-                        zones.Clear();
-                        foreach (var item in world.Zones.Values)
-                        {
-                            var z = new zone(item.Id, (int)item.Type);
-                            zones.Add(item.Id, z);
-                            listBox1.Items.Add(z);
-                        }
-                    });
-                    DrawZone(-1);
                     break;
                 case MessageType.Clear:
+                    bgcolor = -1;
                     ReloadPicturebox();
                     listBox1.Invoke((Action)delegate () { listBox1.Items.Clear(); });
                     zones.Clear();
@@ -268,7 +205,7 @@ namespace datavisualizer
                         var id = m.GetInt(0);
                         if (pid == id)
                         {
-                            var p = players[id];
+                            var p = data.Players[id];
                             var f = p.Keys;
                             bool space = f.HasFlag(MovementKeys.Spacebar),
                                  up = f.HasFlag(MovementKeys.Up),
@@ -296,8 +233,8 @@ namespace datavisualizer
                     this.Invoke((Action)delegate
                     {
                         var id = m.GetInt(0);
-                        var p = new player(id, m.GetString(1));
-                        playersd.Add(id, p);
+                        var p = new MyPlayer(id, m.GetString(1));
+                        players.Add(id, p);
                         listBox2.Items.Add(p);
                     });
                     break;
@@ -305,8 +242,8 @@ namespace datavisualizer
                     this.Invoke((Action)delegate
                     {
                         var id = m.GetInt(0);
-                        var p = playersd[id];
-                        playersd.Remove(id);
+                        var p = players[id];
+                        players.Remove(id);
                         listBox2.Items.Remove(p);
                     });
                     break;
@@ -322,22 +259,18 @@ namespace datavisualizer
                 if (id == -1)
                 {
                     g2.Clear(Color.Fuchsia);
-                    //g2?.Dispose();
-                    //b2?.Dispose();
-                    //pictureBoxWithInterpolationMode1.Image = b2 = new Bitmap(world.Width, world.Height);
-                    //g2 = Graphics.FromImage(b2);
                     foreach (var item in zones.Keys)
                         if (item != highlight) DrawZone(item, highlight);
                     if (highlight != -1) DrawZone(highlight, highlight);
                 }
                 else
                 {
-                    var z = world.Zones[id];
+                    var z = data.Zones[id];
                     var m = z.Map;
                     int w = m.GetLength(0);
                     int h = m.GetLength(1);
                     var t = (int)z.Type;
-                    var c = t == 0 ? Color.Gold : Color.Gray;
+                    var c = t == 0 ? Color.Goldenrod : Color.Gray;
                     if (id == highlight)
                     {
                         byte max(byte l, byte r) => Math.Max(l, r);
@@ -345,12 +278,10 @@ namespace datavisualizer
                         byte br(byte a) { var d = max(a, (byte)(a + b)); if (a > d) return 255; else return d; }
                         c = Color.FromArgb(br(c.R), br(c.G), br(c.B));
                     }
-                    //c = Color.FromArgb((byte)(255 * .75), c);
                     for (int y = 0; y < h; y++)
                         for (int x = 0; x < w; x++)
                         {
                             if (m[x, y]) b2.SetPixel(x, y, c);
-                            //if (m[x, y]) g2.FillRectangle(new Pen(c).Brush, x, y, 1, 1);
                         }
                 }
                 pictureBoxWithInterpolationMode1.Invalidate();
@@ -359,21 +290,15 @@ namespace datavisualizer
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (listBox1.SelectedItem == null) DrawZone(-1);
-            else DrawZone(-1, ((zone)listBox1.SelectedItem).id);
+            else DrawZone(-1, ((MyZone)listBox1.SelectedItem).id);
         }
 
         int pid = -1;
         private void listBox2_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (listBox2.SelectedItem == null) pid = -1;
-            else pid = ((player)listBox2.SelectedItem).id;
+            else pid = ((MyPlayer)listBox2.SelectedItem).id;
         }
-    }
-    static class ConnectionExtensions
-    {
-        public static void PlaceBlock(this IConnection con, int layer, int x, int y, BlockId id, params object[] args) => con.Send(MessageType.PlaceBlock, new object[] { layer, x, y, (int)id }.Concat(args).ToArray());
-        public static void PlaceBlock(this IConnection con, int layer, int x, int y, int id, params object[] args) => con.Send(MessageType.PlaceBlock, new object[] { layer, x, y, id }.Concat(args).ToArray());
-        public static void Chat(this IConnection con, string message) => con.Send(MessageType.Chat, message);
     }
 
     public class PictureBoxWithInterpolationMode : PictureBox
