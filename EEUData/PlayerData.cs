@@ -37,7 +37,6 @@ namespace EEUData
             this.Username = username;
 
             this._effects = new Dictionary<EffectType, int>();
-            //this.Effects = new int[EFFECTSCOUNT];
         }
 
         public int Id { get; set; }
@@ -53,13 +52,10 @@ namespace EEUData
         public bool HasEdit { get; set; }
         public bool HasGod { get; set; }
 
-        //public bool IsOwner { get => Rank == Rank.Owner; }
         public Rank Rank { get; set; }
-        //public double Time { get; set; }
         public bool Won { get; set; }
         protected internal Dictionary<EffectType, int> _effects;
         public IReadOnlyDictionary<EffectType, int> Effects { get => _effects; }
-        //public int[] Effects { get; set; }
         public bool[] LocalSwitches { get; set; }
 
         #region physics crud
@@ -82,8 +78,6 @@ namespace EEUData
 
         public int GoldCoins { get; set; }
         public int BlueCoins { get; set; }
-
-        //private const int EFFECTSCOUNT = 2;
     }
     public enum EffectType : int
     {

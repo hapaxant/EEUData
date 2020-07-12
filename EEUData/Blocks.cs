@@ -160,7 +160,7 @@ namespace EEUData
 
         public Block[,,] Blocks { get; protected set; }
 
-        public static int GetARGBColor(ushort fg = (ushort)BlockId.Black, ushort bg = (ushort)BlockId.Black, int backgroundColor = -1) => FromARGBToBlockColor(GetARGBColor(fg, bg, backgroundColor));
+        public static int GetARGBColor(ushort fg = (ushort)BlockId.Black, ushort bg = (ushort)BlockId.Black, int backgroundColor = -1) => FromBlockColorToARGB(GetBlockColor(fg, bg, backgroundColor));
         public static int GetBlockColor(ushort fg = (ushort)BlockId.Black, ushort bg = (ushort)BlockId.Black, int backgroundColor = -1)
         {
             unchecked
@@ -178,7 +178,7 @@ namespace EEUData
                 return c;
             }
         }
-        public virtual int GetARGBColor(int x, int y, int layer = -1, int backgroundColor = -2) => GetBlockColor(x, y, layer, backgroundColor);
+        public virtual int GetARGBColor(int x, int y, int layer = -1, int backgroundColor = -2) => FromBlockColorToARGB(GetBlockColor(x, y, layer, backgroundColor));
         public virtual int GetBlockColor(int x, int y, int layer = -1, int backgroundColor = -2)
         {
             if (backgroundColor == -2) backgroundColor = this.BackgroundColor;
@@ -191,24 +191,6 @@ namespace EEUData
                 return GetBlockColor((ushort)this.Blocks[1, x, y].Id, (ushort)BlockId.Empty, backgroundColor);
             else throw new ArgumentOutOfRangeException(nameof(layer));
         }
-
-        protected internal virtual void HandleClear() => Blocks = GetClearedWorld(Width, Height, 2);
-        public static Block[,,] GetClearedWorld(int width, int height, int layers = 2)
-        {
-            if (layers < 2) throw new ArgumentOutOfRangeException(nameof(layers) + " must be at least 2.");
-
-            int w = width, h = height;
-            var b = new Block[layers, w, h];
-            for (int y = 0; y < h; y++)
-            {
-                for (int x = 0; x < w; x++)
-                {
-                    b[1, x, y] = new Block((y == 0 || y == (h - 1)) || (x == 0 || x == (w - 1)) ? BlockId.BasicGrey : BlockId.Empty);
-                }
-            }
-            return b;
-        }
-
 
         /// <summary>
         /// -2 = invisible like black block
@@ -362,6 +344,23 @@ namespace EEUData
                 return (argb < 0 || argb > 1) ? (int)0x00ffffff & argb : argb == 0 ? -1 : -2;
             }
         }
+
+        public static Block[,,] GetClearedWorld(int width, int height, int layers = 2)
+        {
+            if (layers < 2) throw new ArgumentOutOfRangeException(nameof(layers) + " must be at least 2.");
+
+            int w = width, h = height;
+            var b = new Block[layers, w, h];
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    b[1, x, y] = new Block((y == 0 || y == (h - 1)) || (x == 0 || x == (w - 1)) ? BlockId.BasicGrey : BlockId.Empty);
+                }
+            }
+            return b;
+        }
+
         /// <summary>
         /// Block[layer,x,y]
         /// </summary>

@@ -94,10 +94,25 @@ namespace EEUData
                                 {
                                     _zones[id].Map[xx, yy] = mode;
                                 }
+
+                            if (mode)
+                            {
+                                var type = _zones[id].Type;
+                                foreach (var zone in _zones)
+                                {
+                                    if (type != zone.Value.Type || zone.Key == id) continue;
+                                    for (int xx = x; xx < w + x; xx++)
+                                        for (int yy = y; yy < h + y; yy++)
+                                        {
+                                            zone.Value.Map[xx, yy] = false;
+                                        }
+                                }
+                            }
                             break;
                         }
                     case MessageType.Clear:
-                        HandleClear();
+                        BackgroundColor = -1;
+                        Blocks = GetClearedWorld(Width, Height, 2);
                         _zones.Clear();
                         break;
                     case MessageType.BgColor:

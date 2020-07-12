@@ -15,7 +15,6 @@ namespace EEUData
     }
     public class Zone
     {
-        //public Zone() { }
         public Zone(int id, int type) : this(id, (ZoneType)type) { }
         public Zone(int id, ZoneType type) { this.Id = id; this.Type = type; }
 
@@ -26,7 +25,6 @@ namespace EEUData
     }
     public partial class RoomData
     {
-
         protected internal Dictionary<int, Zone> _zones;
         public IReadOnlyDictionary<int, Zone> Zones { get => _zones; }
         public static Dictionary<int, Zone> DeserializeZoneData(List<object> m, int width, int height, ref int index)
