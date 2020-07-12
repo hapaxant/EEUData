@@ -25,7 +25,7 @@ namespace EEUData
         public int GetPing()
         {
             var s = System.Diagnostics.Stopwatch.StartNew();
-            _client.ReceiveMessage(new Message(ConnectionScope.World, MessageType.Ping), (m) => m.Type == MessageType.Pong);
+            _client.ReceiveMessage(new Message(ConnectionScope.World, MessageType.Ping), (m) => m.Type == MessageType.Pong, -1);
             return (int)s.ElapsedMilliseconds;
         }
         public void ChangeSmiley(SmileyType id) => ChangeSmiley((int)id);

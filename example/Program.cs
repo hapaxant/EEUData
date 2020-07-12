@@ -58,7 +58,7 @@ namespace example
                             var bid = blockids[id++];//get next block in list
                             if (id >= blockids.Count) id = 0;//loop over
                             var layer = bid.IsBackground() ? 0 : 1;//if block is bg, place it in bg layer
-                            con.PlaceBlock(layer, x, y, bid);//place block
+                            if (data.Blocks[layer, x, y].Id != (ushort)bid) con.PlaceBlock(layer, x, y, bid);//place block
                         }//for x,y
                     Thread.Sleep(1);//small delay
                 }//for
@@ -74,6 +74,7 @@ namespace example
             for (int y = 0; y < data.Height; y++)
                 for (int x = 0; x < data.Width; x++)
                 {
+                    if (data.Blocks[layer, x, y].Id == id) continue;//skip placing if the block is already there
                     con.PlaceBlock(layer, x, y, id);
                 }
         }
@@ -191,14 +192,14 @@ namespace example
                                     var width = data.Width;
                                     var height = data.Height;
                                     for (int i = 0; i < width; i++)
-                                    {
-                                        con.PlaceBlock(layer, i, 0, result);
-                                        con.PlaceBlock(layer, i, height - 1, result);
+                                    {//top and bottom
+                                        if (data.Blocks[layer, i, 0].Id != result) con.PlaceBlock(layer, i, 0, result);
+                                        if (data.Blocks[layer, i, height - 1].Id != result) con.PlaceBlock(layer, i, height - 1, result);
                                     }
                                     for (int i = 1; i < height - 1; i++)
-                                    {
-                                        con.PlaceBlock(layer, 0, i, result);
-                                        con.PlaceBlock(layer, width - 1, i, result);
+                                    {//left and right
+                                        if (data.Blocks[layer, 0, i].Id != result) con.PlaceBlock(layer, 0, i, result);
+                                        if (data.Blocks[layer, width - 1, i].Id != result) con.PlaceBlock(layer, width - 1, i, result);
                                     }
                                     break;
                                 }
@@ -227,8 +228,8 @@ namespace example
                         const int tilesdelay = 50;
                         if (tid == -1)
                         {//tiles snake
-                            if (id == (int)BlockId.TilesPurple) { msdelay = tilesdelay; tid = 0; }
                             if (id >= (int)BlockId.TilesWhite && id <= (int)BlockId.TilesBlue) { msdelay = tilesdelay; tid = id + 1; }//check for range to avoid too much code repeat
+                            else if (id == (int)BlockId.TilesPurple) { msdelay = tilesdelay; tid = 0; }
                         }
                         if (tid == -1) break;//the block is not what we're looking for; break
 
@@ -292,9 +293,10 @@ namespace example
                         if (id == data.BotId) break;//break if id is bot
                         if (data.Players[id].Username != data.OwnerUsername) break;//break if not world owner, in other worlds, only stalk world owner (you)
 
-                        //skip playerid and take 30 elements that form playermove, turn to array and send it
-                        con.SendL(MessageType.PlayerMove, m.Data.Skip(1).Take(30).ToArray());
-                        //this is not taking god mode into account which can lead to interesting effects
+                        //skip playerid and take 30 elements that form playermove, turn to array
+                        var msg = m.Data.Skip(1).Take(30).ToArray();
+                        con.SendL(MessageType.PlayerMove, msg);//send it
+                        //this is not taking god mode into account which can lead to interesting effects (flying without visible godmode and falling upon hitting a block)
                         break;
                     }
             }//switch
