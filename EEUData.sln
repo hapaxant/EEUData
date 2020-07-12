@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "example", "example\example.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "datavisualizer", "datavisualizer\datavisualizer.csproj", "{54F29211-1B44-47A6-8599-4E4778FD18B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EEWArtist", "eewartist\EEWArtist.csproj", "{BAD055CF-2E43-48FD-AB21-05908A9FBCA7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EEUArtist", "EEUArtist\EEUArtist.csproj", "{BAD055CF-2E43-48FD-AB21-05908A9FBCA7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EEUData", "EEUData\EEUData.csproj", "{5CAE1733-4071-4C2B-BCF5-294202229D99}"
 EndProject
