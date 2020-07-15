@@ -1,8 +1,8 @@
-# EEUWU
-various stuff for eeuniverse/eeworlds
+# EEUData
+A library for EEUniverse, and some bots. targets .net framework 4.7.2
 
-EEUniverse.Library changed to work with websocket-sharp .net framework 4.7.2
+EEUniverse.Library slightly modified to work with websocket-sharp.
 
-EEUData/EEWData lets you work with world/player data easily. Use Parse() method in OnMessage event to use it.
+EEUData parses world/player data for you. See example project.
 
-EEWArtist lets you upload images to worlds easily.
+EEUArtist lets you upload images to worlds.
