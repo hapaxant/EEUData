@@ -5,9 +5,9 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{BAD055CF-2E43-48FD-AB21-05908A9FBCA7}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>eewartist</RootNamespace>
-    <AssemblyName>eewartist</AssemblyName>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>EEUArtist</RootNamespace>
+    <AssemblyName>EEUArtist</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -67,6 +67,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -90,6 +91,9 @@
       <Project>{0c6d7e80-939a-4d2b-8a11-1a9c331a51a4}</Project>
       <Name>EEUniverse.Library</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\transparencytxt.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
