@@ -608,6 +608,13 @@ namespace eewartist
         }
 
         int counter = 0;
+
+        bool skiptransparent;
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            skiptransparent = checkBox1.Checked;
+        }
+
         private void label7_DoubleClick(object sender, EventArgs e)
         {
             counter++;
@@ -676,6 +683,7 @@ namespace eewartist
                                 int xx = i + x;
                                 if (xx >= ww) break;//out of bounds
                                 int b = idgrid[i, j];
+                                if (skiptransparent && b == (int)BlockId.Black) continue;
                                 int l = ((BlockId)b).IsBackground() ? 0 : 1;
 
                                 if (world[l, xx, yy].Id != b) con.PlaceBlock(l, xx, yy, b);

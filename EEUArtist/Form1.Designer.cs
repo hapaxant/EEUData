@@ -52,6 +52,7 @@
             this.panelMain = new System.Windows.Forms.Panel();
             this.label7 = new System.Windows.Forms.Label();
             this.checkBox3 = new System.Windows.Forms.CheckBox();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.panel1 = new System.Windows.Forms.Panel();
             this.pictureBox1 = new eewartist.PictureBoxWithInterpolationMode();
             this.trackBar3 = new System.Windows.Forms.TrackBar();
@@ -320,6 +321,7 @@
             this.panelMain.Controls.Add(this.numericUpDown2);
             this.panelMain.Controls.Add(this.label1);
             this.panelMain.Controls.Add(this.checkBox3);
+            this.panelMain.Controls.Add(this.checkBox1);
             this.panelMain.Controls.Add(this.button3);
             this.panelMain.Controls.Add(this.label4);
             this.panelMain.Controls.Add(this.radioButton1);
@@ -341,7 +343,7 @@
             this.label7.Anchor = System.Windows.Forms.AnchorStyles.Top;
             this.label7.AutoSize = true;
             this.label7.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(100)))), ((int)(((byte)(100)))));
-            this.label7.Location = new System.Drawing.Point(469, 9);
+            this.label7.Location = new System.Drawing.Point(494, 11);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(41, 13);
             this.label7.TabIndex = 19;
@@ -352,13 +354,27 @@
             // 
             this.checkBox3.AutoSize = true;
             this.checkBox3.ForeColor = System.Drawing.Color.Gainsboro;
-            this.checkBox3.Location = new System.Drawing.Point(360, 8);
+            this.checkBox3.Location = new System.Drawing.Point(357, 0);
             this.checkBox3.Name = "checkBox3";
             this.checkBox3.Size = new System.Drawing.Size(79, 17);
             this.checkBox3.TabIndex = 9;
             this.checkBox3.Text = "place &glass";
+            this.toolTip1.SetToolTip(this.checkBox3, "places glass on background blocks");
             this.checkBox3.UseVisualStyleBackColor = true;
             this.checkBox3.CheckedChanged += new System.EventHandler(this.checkBox3_CheckedChanged);
+            // 
+            // checkBox1
+            // 
+            this.checkBox1.AutoSize = true;
+            this.checkBox1.ForeColor = System.Drawing.Color.Gainsboro;
+            this.checkBox1.Location = new System.Drawing.Point(357, 15);
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.Size = new System.Drawing.Size(130, 17);
+            this.checkBox1.TabIndex = 20;
+            this.checkBox1.Text = "skip transparent pixels";
+            this.toolTip1.SetToolTip(this.checkBox1, "do not overwrite blocks where there is transparent pixel");
+            this.checkBox1.UseVisualStyleBackColor = true;
+            this.checkBox1.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
             // 
             // panel1
             // 
@@ -474,6 +490,7 @@
         private System.Windows.Forms.TrackBar trackBar3;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.ToolTip toolTip1;
+        private System.Windows.Forms.CheckBox checkBox1;
     }
 }
 
