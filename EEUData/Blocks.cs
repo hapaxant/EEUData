@@ -320,10 +320,10 @@ namespace EEUData
             { (ushort)BlockId.SwitchGlobalReset, -1 },
             { (ushort)BlockId.SwitchGlobalDoor, -1 },
             //bg brick
-            { (ushort)BlockId.BrickClayRed, 10376774 },
-            { (ushort)BlockId.BrickStoneGrey, 7435382 },
-            { (ushort)BlockId.BgBrickClayRed, 7617585 },
-            { (ushort)BlockId.BgBrickStoneGrey, 4540232 },
+            { (ushort)BlockId.BrickClayRed, 10638660 },
+            { (ushort)BlockId.BrickStoneGrey, 8093055 },
+            { (ushort)BlockId.BgBrickClayRed, 7617327 },
+            { (ushort)BlockId.BgBrickStoneGrey, 4671818 },
             //platform
             { (ushort)BlockId.Platform, -1 },
         };
