@@ -63,6 +63,7 @@ namespace eewartist
         const string CREDSPATH = "creds.txt";
         const string CACHEPATH = "cache{0}.db";
         private const string FILEDIALOGNAMEPATH = "fdt.txt";
+        private const string VERSIONFILE = "version.txt";
         ConcurrentDictionary<int, ushort>[] cache = new ConcurrentDictionary<int, ushort>[3];
         bool cacheModified = false;
         Dictionary<int, ushort> ReadCache(int i)
@@ -140,10 +141,36 @@ namespace eewartist
         //{
         //    Process.Start(Environment.OSVersion.Platform == PlatformID.Win32NT ? "notepad.exe" : "nano", path);
         //}
+        const string CURRENTVERSION = "1";
         private void Form1_Load(object sender, EventArgs e)
         {
+            bool purgecache = false;
+            if (!File.Exists(VERSIONFILE))
+            {
+                purgecache = true;
+                File.WriteAllLines(VERSIONFILE, new[] { CURRENTVERSION, "DO NOT EDIT THIS VALUE" });
+            }
+            var ver = File.ReadAllLines(VERSIONFILE);
+            if (ver[0] != CURRENTVERSION)
+            {
+                purgecache = true;
+                File.WriteAllLines(VERSIONFILE, new[] { CURRENTVERSION, "DO NOT EDIT THIS VALUE" });
+            }
+            if (ver[1] != "DO NOT EDIT THIS VALUE")
+            {
+                MessageBox.Show("what did i say", "you egg", MessageBoxButtons.RetryCancel, MessageBoxIcon.Error);
+                File.WriteAllLines(VERSIONFILE, new[] { CURRENTVERSION, "DO NOT EDIT THIS VALUE" });
+            }
+
             for (int i = 0; i < 2; i++)
             {
+                if (purgecache)
+                {
+                    if (File.Exists($"cache{i + 1}.db")) File.Delete($"cache{i + 1}.db");
+                    cache[i] = new ConcurrentDictionary<int, ushort>();
+                    continue;
+                }
+
                 try
                 {
                     cache[i] = new ConcurrentDictionary<int, ushort>(ReadCache(i + 1));
