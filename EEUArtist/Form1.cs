@@ -141,7 +141,7 @@ namespace eewartist
         //{
         //    Process.Start(Environment.OSVersion.Platform == PlatformID.Win32NT ? "notepad.exe" : "nano", path);
         //}
-        const string CURRENTVERSION = "1";
+        const string CURRENTVERSION = "2";
         private void Form1_Load(object sender, EventArgs e)
         {
             bool purgecache = false;
