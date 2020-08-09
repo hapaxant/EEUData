@@ -32,6 +32,7 @@ namespace EEUniverse.Library
         public virtual Task ConnectAsync()
         {
             Socket = new WebSocket($"{MultiplayerHost}{_connectUrl}{_token}");
+            Socket.Compression = CompressionMethod.Deflate;
             Socket.OnMessage += _socket_OnMessage;
             Socket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
             var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
