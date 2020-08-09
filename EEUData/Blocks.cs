@@ -114,6 +114,9 @@ namespace EEUData
         BrickStoneGrey = 108,
         //platform
         Platform = 106,
+        //terrain
+        TerrainDirt = 111,
+        TerrainSand = 112,
         #endregion
         #region bg
         //basic bg
@@ -326,6 +329,9 @@ namespace EEUData
             { (ushort)BlockId.BgBrickStoneGrey, 4671818 },
             //platform
             { (ushort)BlockId.Platform, -1 },
+            //terrain
+            { (ushort)BlockId.TerrainDirt, 8020293 },
+            { (ushort)BlockId.TerrainSand, 14861457 },
         };
         public static uint FromBlockColorToARGB(uint blockcolor) => (uint)FromBlockColorToARGB((int)blockcolor);
         public static int FromBlockColorToARGB(int blockcolor)
