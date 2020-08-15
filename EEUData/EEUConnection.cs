@@ -98,10 +98,10 @@ namespace EEUData
         }
         //i regret this decision
         public void Move(double lastTime = 0, double currentTime = 0, int horizonal = 0, int vertical = 0, double x = 0, double y = 0,
-                        double xvelocity = 0, double yvelocity = 0, double xacceleration = 0, double yacceleration = 0, double drag = 0,
-                        double edge0 = 0, double edge1 = 0, double edge2 = 0, double edge3 = 0, int edge4 = 0, int edge5 = 0,
-                        double sliding0 = 0, double sliding1 = 0, double sliding2 = 0, double sliding3 = 0, int sliding4 = 0, int sliding5 = 0,
-                        double horizonalforce = 0, double verticalforce = 0, int xgrid = 0, int ygrid = 0, int edge = 0, bool space = false, double spacetime = 0)
+                         double xvelocity = 0, double yvelocity = 0, double xacceleration = 0, double yacceleration = 0, double drag = 0,
+                         double edge0 = 0, double edge1 = 0, double edge2 = 0, double edge3 = 0, int edge4 = 0, int edge5 = 0,
+                         double sliding0 = 0, double sliding1 = 0, double sliding2 = 0, double sliding3 = 0, int sliding4 = 0, int sliding5 = 0,
+                         double horizonalforce = 0, double verticalforce = 0, int xgrid = 0, int ygrid = 0, int edge = 0, bool space = false, double spacetime = 0)
                 => SendL(MessageType.PlayerMove, lastTime, currentTime, horizonal, vertical, x, y,
                          xvelocity, yvelocity, xacceleration, yacceleration, drag,
                          edge0, edge1, edge2, edge3, edge4, edge5,
