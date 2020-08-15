@@ -31,8 +31,7 @@ namespace EEUniverse.Library
         protected string _connectUrl = "/?a=";
         public virtual Task ConnectAsync()
         {
-            Socket = new WebSocket($"{MultiplayerHost}{_connectUrl}{_token}");
-            Socket.Compression = CompressionMethod.Deflate;
+            Socket = new WebSocket($"{MultiplayerHost}{_connectUrl}{_token}") { Compression = CompressionMethod.Deflate };
             Socket.OnMessage += _socket_OnMessage;
             Socket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
             var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -42,7 +41,7 @@ namespace EEUniverse.Library
             Socket.OnClose += (o, e) =>
             {
                 if (!tcs.Task.IsCompleted) { tcs.SetException(new InvalidOperationException($"{e.Code} {e.Reason} {e.WasClean}")); }
-                OnDisconnect?.Invoke(this, new CloseEventArgs() { Reason = e.Reason, WasClean = e.WasClean, WebSocketError = (CloseStatusCode)e.Code/*this is hopefully correct (it probably isn't)*/ });
+                OnDisconnect?.Invoke(this, new CloseEventArgs() { Reason = e.Reason, WasClean = e.WasClean, WebSocketError = (CloseStatusCode)e.Code });
             };
             Socket.OnError += (o, e) =>
             {
