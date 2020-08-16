@@ -447,7 +447,7 @@ namespace EEUData
         }
     }
 
-    public struct Block
+    public struct Block : IEquatable<Block>
     {
         public Block(int id = 0) : this((ushort)id, 0, null) { }
         public Block(int id = 0, int playerId = 0) : this((ushort)id, playerId, null) { }
@@ -525,18 +525,31 @@ namespace EEUData
         /// converts this block instance to human readable format.
         /// </summary>
         public override string ToString() => $"[{nameof(Id)}:({Id}:{((BlockId)Id)}), {nameof(PlayerId)}:{PlayerId}{(Data != null ? ", " + Data.ToString() : "")}]";
+
+        public override int GetHashCode() => Id ^ PlayerId ^ (Data?.GetHashCode() ?? 0);
+        public static bool operator ==(Block left, Block right) => left.Equals(right);
+        public static bool operator !=(Block left, Block right) => !left.Equals(right);
+        public override bool Equals(object obj)
+        {
+            if (obj.GetType() != typeof(Block)) return false;
+            return Equals((Block)obj);
+        }
+        public bool Equals(Block other) => Id == other.Id && (Data != null ? Data.Equals(other.Data) : other.Data == null);//not comparing playerid here since that's not relevant for the block itself
     }
-    public abstract class ExtraBlockData
+    public abstract class ExtraBlockData : IEquatable<ExtraBlockData>
     {
         public abstract List<object> Serialize();
         /// <summary>
         /// converts this block data to human readable format.
         /// </summary>
         public abstract override string ToString();
+        public abstract override int GetHashCode();
+        public abstract override bool Equals(object obj);
+        public abstract bool Equals(ExtraBlockData obj);
     }
     public interface IMorphable { int Morph { get; set; } }
     public interface IFlippable { bool Flipped { get; set; } }
-    public class SignBlockData : ExtraBlockData, IMorphable
+    public class SignBlockData : ExtraBlockData, IEquatable<SignBlockData>, IMorphable
     {
         public SignBlockData(List<object> data, ref int index) => Deserialize(data, ref index);
         public SignBlockData(string text = null, int morph = 0)
@@ -553,8 +566,17 @@ namespace EEUData
         public static SignBlockData Deserialize(List<object> data, ref int index) => new SignBlockData((string)data[index++], (int)data[index++]);
 
         public override string ToString() => $"{nameof(Text)}:\"{Text.Replace("\"", "\\\"")}\", {nameof(Morph)}:{Morph}";
+
+        public override int GetHashCode() => Text.GetHashCode() ^ Morph.GetHashCode();
+        public override bool Equals(object obj) => Equals(obj as SignBlockData);
+        public override bool Equals(ExtraBlockData obj) => Equals(obj as SignBlockData);
+        public bool Equals(SignBlockData o)
+        {
+            if (o == null) return false;
+            return Morph == o.Morph && Text == o.Text;
+        }
     }
-    public class PortalBlockData : ExtraBlockData, IMorphable, IFlippable
+    public class PortalBlockData : ExtraBlockData, IEquatable<PortalBlockData>, IMorphable, IFlippable
     {
         public PortalBlockData(List<object> data, ref int index) => Deserialize(data, ref index);
         public PortalBlockData(int rotation = 0, int thisId = 0, int targetId = 0, bool flipped = false)
@@ -576,8 +598,17 @@ namespace EEUData
         public static PortalBlockData Deserialize(List<object> data, ref int index) => new PortalBlockData((int)data[index++], (int)data[index++], (int)data[index++], (bool)data[index++]);
 
         public override string ToString() => $"{nameof(Rotation)}:{Rotation}, {nameof(ThisId)}:{ThisId}, {nameof(TargetId)}:{TargetId}, {nameof(Flipped)}:{Flipped}";
+
+        public override int GetHashCode() => Rotation ^ ThisId ^ TargetId ^ Flipped.GetHashCode();
+        public override bool Equals(object obj) => Equals(obj as PortalBlockData);
+        public override bool Equals(ExtraBlockData obj) => Equals(obj as PortalBlockData);
+        public bool Equals(PortalBlockData o)
+        {
+            if (o == null) return false;
+            return Flipped == o.Flipped && Rotation == o.Rotation && ThisId == o.ThisId && TargetId == o.TargetId;
+        }
     }
-    public class EffectBlockData : ExtraBlockData, IMorphable
+    public class EffectBlockData : ExtraBlockData, IEquatable<EffectBlockData>, IMorphable
     {
         public EffectBlockData(List<object> data, ref int index) => Deserialize(data, ref index);
         public EffectBlockData(int value = 0) => this.Value = value;
@@ -589,8 +620,17 @@ namespace EEUData
         public static EffectBlockData Deserialize(List<object> data, ref int index) => new EffectBlockData((int)data[index++]);
 
         public override string ToString() => $"{nameof(Value)}:{Value}";
+
+        public override int GetHashCode() => Value;
+        public override bool Equals(object obj) => Equals(obj as EffectBlockData);
+        public override bool Equals(ExtraBlockData obj) => Equals(obj as EffectBlockData);
+        public bool Equals(EffectBlockData o)
+        {
+            if (o == null) return false;
+            return Value == o.Value;
+        }
     }
-    public class SwitchBlockData : ExtraBlockData, IMorphable, IFlippable
+    public class SwitchBlockData : ExtraBlockData, IEquatable<SwitchBlockData>, IMorphable, IFlippable
     {
         public SwitchBlockData(List<object> data, ref int index, bool isDoor) => Deserialize(data, ref index, isDoor);
         public SwitchBlockData(int value = 0, bool? inverted = null)
@@ -611,8 +651,17 @@ namespace EEUData
         public static SwitchBlockData Deserialize(List<object> data, ref int index, bool isDoor) => new SwitchBlockData((int)data[index++], isDoor ? (bool)data[index++] : null as bool?);
 
         public override string ToString() => $"{nameof(Value)}:{Value}{(Inverted.HasValue ? $", {nameof(Inverted)}:{Inverted}" : "")}";
+
+        public override int GetHashCode() => Value ^ Inverted.GetHashCode();
+        public override bool Equals(object obj) => Equals(obj as SwitchBlockData);
+        public override bool Equals(ExtraBlockData obj) => Equals(obj as SwitchBlockData);
+        public bool Equals(SwitchBlockData o)
+        {
+            if (o == null) return false;
+            return Value == o.Value && Inverted == o.Inverted;
+        }
     }
-    public class PlatformBlockData : ExtraBlockData, IMorphable
+    public class PlatformBlockData : ExtraBlockData, IEquatable<PlatformBlockData>, IMorphable
     {
         public PlatformBlockData(List<object> data, ref int index) => Deserialize(data, ref index);
         public PlatformBlockData(int rotation = 0) => this.Rotation = rotation;
@@ -624,5 +673,14 @@ namespace EEUData
         public static PlatformBlockData Deserialize(List<object> data, ref int index) => new PlatformBlockData((int)data[index++]);
 
         public override string ToString() => $"{nameof(Rotation)}:{Rotation}";
+
+        public override int GetHashCode() => Rotation;
+        public override bool Equals(object obj) => Equals(obj as PlatformBlockData);
+        public override bool Equals(ExtraBlockData obj) => Equals(obj as PlatformBlockData);
+        public bool Equals(PlatformBlockData o)
+        {
+            if (o == null) return false;
+            return Rotation == o.Rotation;
+        }
     }
 }
