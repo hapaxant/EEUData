@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EEUData", "EEUData\EEUData.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EEUniverse.Library", "EEULibrary\EEUniverse.Library.csproj", "{0C6D7E80-939A-4D2B-8A11-1A9C331A51A4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RectTool", "RectTool\RectTool.csproj", "{4561CDF4-1824-461A-8D2E-28E0C5C75774}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{0C6D7E80-939A-4D2B-8A11-1A9C331A51A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0C6D7E80-939A-4D2B-8A11-1A9C331A51A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0C6D7E80-939A-4D2B-8A11-1A9C331A51A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4561CDF4-1824-461A-8D2E-28E0C5C75774}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4561CDF4-1824-461A-8D2E-28E0C5C75774}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4561CDF4-1824-461A-8D2E-28E0C5C75774}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4561CDF4-1824-461A-8D2E-28E0C5C75774}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
