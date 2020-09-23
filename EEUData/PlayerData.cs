@@ -78,6 +78,8 @@ namespace EEUData
 
         public int GoldCoins { get; set; }
         public int BlueCoins { get; set; }
+
+        public object Tag { get; set; }
     }
     public enum EffectType : int
     {
