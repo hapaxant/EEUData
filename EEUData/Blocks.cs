@@ -360,11 +360,11 @@ namespace EEUData
             { (ushort)BlockId.JunglePlatform, -1 },
             { (ushort)BlockId.JungleLeavesHorizontal, -1 },
             { (ushort)BlockId.JungleLeavesVertical, -1 },
-            { (ushort)BlockId.JungleGray, 5592909 },
-            { (ushort)BlockId.JungleRed, 6771020 },
-            { (ushort)BlockId.JungleGreen, 5331773 },
-            { (ushort)BlockId.JungleBlue, 5529183 },
-            { (ushort)BlockId.JungleYellow, 5855806 },
+            { (ushort)BlockId.BgJungleGray, 5592909 },
+            { (ushort)BlockId.BgJungleRed, 6771020 },
+            { (ushort)BlockId.BgJungleGreen, 5331773 },
+            { (ushort)BlockId.BgJungleBlue, 5529183 },
+            { (ushort)BlockId.BgJungleYellow, 5855806 },
         };
         public static uint FromBlockColorToARGB(uint blockcolor) => (uint)FromBlockColorToARGB((int)blockcolor);
         public static int FromBlockColorToARGB(int blockcolor)
