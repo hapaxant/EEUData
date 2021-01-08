@@ -156,6 +156,10 @@ namespace EEUniverse.Library
         /// https://luciferx.net/eeu/protocol#CoinBlue
         /// </summary>
         [Scope(ConnectionScope.World)] CoinBlue = 35,
+        /// <summary>
+        /// https://luciferx.net/eeu/protocol#Dialog
+        /// </summary>
+        [Scope(ConnectionScope.World)] Dialog = 36,
 
         //TODO: Should probably find a better way to implement these.
         //      Also don't know how accurate the names are.
