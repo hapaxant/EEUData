@@ -73,6 +73,7 @@ namespace EEUData
         public void GiveEffect(string username, EffectType effect, int config = 0) => GiveEffect(username, (int)effect, config);
         public void GiveEffect(string username, int effect, int config = 0) => ChatRaw($"/effect {username} {effect} {config}");
         public void SetWorldVisibility(WorldVisibility visibility) => ChatRaw("/visibility " + (int)visibility);
+        public void Kick(string username, string reason = "") => ChatRaw($"/kick {username} {reason}");
         public WorldVisibility GetWorldVisibility()
         {
             var msg = _client.ReceiveMessage(new Message(ConnectionScope.World, MessageType.Chat, "/visibility"), (m) => m.Type == MessageType.ChatInfo && m.GetString(0).StartsWith("World is "));
