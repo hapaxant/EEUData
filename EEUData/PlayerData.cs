@@ -97,6 +97,7 @@ namespace EEUData
         Angry = 5,
         Joyful = 6,
         Cheeky = 7,
+        Ninja = 8,
     }
     public partial class RoomData
     {

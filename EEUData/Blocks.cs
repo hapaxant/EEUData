@@ -117,6 +117,17 @@ namespace EEUData
         //terrain
         TerrainDirt = 111,
         TerrainSand = 112,
+        //jungle
+        JungleGray = 113,
+        JungleRed = 114,
+        JungleGreen = 115,
+        JungleBlue = 116,
+        JungleYellow = 117,
+        JungleFace = 118,
+        JunglePot = 119,
+        JunglePlatform = 120,
+        JungleLeavesHorizontal = 121,
+        JungleLeavesVertical = 122,
         #endregion
         #region bg
         //basic bg
@@ -144,6 +155,12 @@ namespace EEUData
         //brick bg
         BgBrickClayRed = 109,
         BgBrickStoneGrey = 110,
+        //jungle bg
+        BgJungleGray = 123,
+        BgJungleRed = 124,
+        BgJungleGreen = 125,
+        BgJungleBlue = 126,
+        BgJungleYellow = 127,
         #endregion
     }
 
@@ -332,6 +349,22 @@ namespace EEUData
             //terrain
             { (ushort)BlockId.TerrainDirt, 8020293 },
             { (ushort)BlockId.TerrainSand, 14861457 },
+            //jungle
+            { (ushort)BlockId.JungleGray, 7829862 },
+            { (ushort)BlockId.JungleRed, 10840673 },
+            { (ushort)BlockId.JungleGreen, 6914876 },
+            { (ushort)BlockId.JungleBlue, 7440788 },
+            { (ushort)BlockId.JungleYellow, 8421949 },
+            { (ushort)BlockId.JungleFace, -1 },
+            { (ushort)BlockId.JunglePot, -1 },
+            { (ushort)BlockId.JunglePlatform, -1 },
+            { (ushort)BlockId.JungleLeavesHorizontal, -1 },
+            { (ushort)BlockId.JungleLeavesVertical, -1 },
+            { (ushort)BlockId.JungleGray, 5592909 },
+            { (ushort)BlockId.JungleRed, 6771020 },
+            { (ushort)BlockId.JungleGreen, 5331773 },
+            { (ushort)BlockId.JungleBlue, 5529183 },
+            { (ushort)BlockId.JungleYellow, 5855806 },
         };
         public static uint FromBlockColorToARGB(uint blockcolor) => (uint)FromBlockColorToARGB((int)blockcolor);
         public static int FromBlockColorToARGB(int blockcolor)
@@ -410,36 +443,37 @@ namespace EEUData
             if (data != null)
                 switch (id)
                 {
-                    case (int)BlockId.SignWood:
-                    case (int)BlockId.SignRed:
-                    case (int)BlockId.SignGreen:
-                    case (int)BlockId.SignBlue:
+                    case (ushort)BlockId.SignWood:
+                    case (ushort)BlockId.SignRed:
+                    case (ushort)BlockId.SignGreen:
+                    case (ushort)BlockId.SignBlue:
                         bd = SignBlockData.Deserialize(data, ref index);
                         break;
 
-                    case (int)BlockId.Portal:
+                    case (ushort)BlockId.Portal:
                         bd = PortalBlockData.Deserialize(data, ref index);
                         break;
 
-                    case (int)BlockId.EffectMultiJump:
-                    case (int)BlockId.EffectHighJump:
+                    case (ushort)BlockId.EffectMultiJump:
+                    case (ushort)BlockId.EffectHighJump:
                         bd = EffectBlockData.Deserialize(data, ref index);
                         break;
 
-                    case (int)BlockId.SwitchLocal:
-                    case (int)BlockId.SwitchLocalReset:
-                    case (int)BlockId.SwitchGlobal:
-                    case (int)BlockId.SwitchGlobalReset:
+                    case (ushort)BlockId.SwitchLocal:
+                    case (ushort)BlockId.SwitchLocalReset:
+                    case (ushort)BlockId.SwitchGlobal:
+                    case (ushort)BlockId.SwitchGlobalReset:
                         bd = SwitchBlockData.Deserialize(data, ref index, false);
                         break;
-                    case (int)BlockId.SwitchGlobalDoor:
-                    case (int)BlockId.SwitchLocalDoor:
-                    case (int)BlockId.CoinGoldDoor:
-                    case (int)BlockId.CoinBlueDoor:
+                    case (ushort)BlockId.SwitchGlobalDoor:
+                    case (ushort)BlockId.SwitchLocalDoor:
+                    case (ushort)BlockId.CoinGoldDoor:
+                    case (ushort)BlockId.CoinBlueDoor:
                         bd = SwitchBlockData.Deserialize(data, ref index, true);
                         break;
 
-                    case (int)BlockId.Platform:
+                    case (ushort)BlockId.Platform:
+                    case (ushort)BlockId.JunglePlatform:
                         bd = PlatformBlockData.Deserialize(data, ref index);
                         break;
                 }
